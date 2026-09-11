@@ -1,145 +1,64 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111111" />
-  <title>My Rate — сколько это стоит тебе</title>
-  <link rel="stylesheet" href="css/styles.css" />
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f3ee"><title>My Rate — сколько мне на это работать?</title>
+<style>
+:root{--bg:#f5f3ee;--card:#fff;--ink:#111;--muted:#77746e;--line:#ddd9d1;--blue:#2583f7;--soft:#efede7;--danger:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.app{max-width:760px;margin:auto;padding:calc(22px + env(safe-area-inset-top)) 16px calc(34px + env(safe-area-inset-bottom))}header{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:20px}.brand{font-size:13px;letter-spacing:.2em;color:var(--muted)}h1{font-size:clamp(30px,8vw,48px);line-height:1.02;margin:5px 0 0}.card{background:var(--card);border-radius:28px;padding:20px;margin:14px 0;box-shadow:0 1px 0 rgba(0,0,0,.04)}h2{font-size:22px;margin:0 0 16px}.muted{color:var(--muted)}label{display:block;font-weight:700;margin:13px 0 7px}.row{display:grid;grid-template-columns:1fr 118px;gap:9px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}input,select,button{font:inherit}input,select{width:100%;min-width:0;border:1px solid var(--line);border-radius:18px;background:#fff;padding:15px 14px;font-size:18px;font-weight:650;color:var(--ink)}input:focus,select:focus{outline:2px solid rgba(37,131,247,.18);border-color:var(--blue)}button{border:0;border-radius:18px;padding:14px 16px;font-weight:800;cursor:pointer}.primary{background:#111;color:#fff}.secondary{background:var(--soft);color:#111}.linkbtn{background:transparent;color:var(--blue);padding:8px}.danger{color:var(--danger)}.profile-summary{display:flex;justify-content:space-between;gap:12px;align-items:end}.big-rate{font-size:clamp(26px,7vw,42px);font-weight:900;overflow-wrap:anywhere}.hidden{display:none!important}.toolbar{display:flex;gap:8px;overflow:auto;padding-bottom:2px}.chip{white-space:nowrap;background:var(--soft);padding:10px 13px;border-radius:999px}.chip.active{background:#111;color:#fff}.item{border:1px solid var(--line);border-radius:22px;padding:15px;margin:12px 0}.item-top{display:flex;justify-content:space-between;gap:10px;align-items:start}.item-title{font-size:19px;font-weight:850;overflow-wrap:anywhere;min-width:0}.item-result{font-size:clamp(24px,7vw,38px);font-weight:950;line-height:1.05;margin-top:13px;overflow-wrap:anywhere}.item-meta{font-size:13px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}.remove{background:transparent;color:var(--muted);padding:2px 6px;font-size:22px}.total{background:#111;color:#fff}.total .muted{color:#aaa}.total-number{font-size:clamp(34px,10vw,58px);font-weight:950;line-height:1;overflow-wrap:anywhere;margin:10px 0}.actions{display:grid;gap:9px;margin-top:14px}.status{font-size:13px;color:var(--muted);margin-top:10px}.saved-entry{border-top:1px solid var(--line);padding:13px 0}.saved-entry:first-of-type{border-top:0}.saved-title{font-weight:850}.saved-meta{font-size:13px;color:var(--muted);margin-top:4px}.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:22px}.footer a{color:inherit}.empty{padding:16px 0;color:var(--muted);text-align:center}@media(max-width:520px){.app{padding-left:12px;padding-right:12px}.card{padding:17px;border-radius:24px}.row{grid-template-columns:minmax(0,1fr) 105px}.row2{grid-template-columns:1fr 1fr}input,select{font-size:16px;padding:14px 12px}.profile-summary{align-items:start;flex-direction:column}.profile-summary .linkbtn{padding-left:0}}
+</style>
 </head>
-<body>
-  <main class="app-shell">
-    <section class="screen active" id="screen-start" data-screen="start">
-      <div class="hero">
-        <span class="eyebrow">MY RATE</span>
-        <h1>Сколько это стоит <em>тебе?</em></h1>
-        <p class="lead">Переведи деньги в часы своей работы.</p>
-        <button class="primary" data-action="go-profile">Посчитать</button>
-      </div>
-    </section>
+<body><main class="app">
+<header><div><div class="brand">MY RATE · ПРОТОТИП</div><h1>Сколько мне<br>на это работать?</h1></div></header>
 
-    <section class="screen" id="screen-profile" data-screen="profile">
-      <header class="screen-header">
-        <button class="ghost" data-action="back-start" aria-label="Назад">←</button>
-        <div>
-          <span class="step">Шаг 1 из 2</span>
-          <h2>Твой личный курс</h2>
-        </div>
-      </header>
+<section id="profileEdit" class="card">
+<h2>Доход и работа</h2>
+<label for="income">Сколько ты зарабатываешь?</label><div class="row"><input id="income" inputmode="decimal" type="number" min="1" max="1000000000000" step="any" placeholder="150000"><select id="incomeCurrency" aria-label="Валюта дохода"></select></div>
+<label for="period">Период дохода</label><select id="period"><option value="month">В месяц</option><option value="week">В неделю</option><option value="year">В год</option></select>
+<div class="row2"><div><label for="days">Дней в неделю</label><input id="days" type="number" min="0.5" max="7" step="0.5" value="5"></div><div><label for="hours">Часов в день</label><input id="hours" type="number" min="0.5" max="24" step="0.5" value="8"></div></div>
+<div class="actions"><button id="saveProfile" class="primary">Сохранить и считать</button></div>
+</section>
 
-      <form id="profile-form" class="card form-card">
-        <label>
-          <span>Сколько ты зарабатываешь?</span>
-          <div class="money-input">
-            <input id="income" inputmode="decimal" type="number" min="0" step="100" placeholder="150000" required />
-            <select id="currency" aria-label="Валюта">
-              <option value="₽">₽</option>
-              <option value="$">$</option>
-              <option value="€">€</option>
-              <option value="₪">₪</option>
-              <option value="£">£</option>
-            </select>
-          </div>
-        </label>
+<section id="profileView" class="card hidden"><div class="profile-summary"><div><div class="muted">Твоё рабочее время</div><div id="rateText" class="big-rate">—</div><div id="profileText" class="status"></div></div><button id="editProfile" class="linkbtn">Изменить доход</button></div></section>
 
-        <label>
-          <span>Период дохода</span>
-          <select id="income-period">
-            <option value="month">В месяц</option>
-            <option value="week">В неделю</option>
-            <option value="year">В год</option>
-          </select>
-        </label>
+<section id="converter" class="hidden">
+<section class="card"><h2>Добавить вещь или расход</h2>
+<label for="itemName">Что считаем?</label><input id="itemName" maxlength="80" placeholder="Например, iPhone 17 Pro">
+<div class="row2"><div><label for="itemPrice">Цена за 1 шт.</label><input id="itemPrice" inputmode="decimal" type="number" min="0.01" max="1000000000000000" step="any" placeholder="1200"></div><div><label for="itemCurrency">Валюта</label><select id="itemCurrency"></select></div></div>
+<div class="row2"><div><label for="itemQty">Количество</label><input id="itemQty" type="number" min="0.01" max="1000000" step="any" value="1"></div><div></div></div>
+<div class="actions"><button id="addItem" class="primary">+ Добавить</button></div><div id="fxStatus" class="status"></div></section>
 
-        <div class="split">
-          <label>
-            <span>Дней в неделю</span>
-            <input id="days-per-week" inputmode="decimal" type="number" min="1" max="7" step="0.5" value="5" required />
-          </label>
-          <label>
-            <span>Часов в день</span>
-            <input id="hours-per-day" inputmode="decimal" type="number" min="0.5" max="24" step="0.5" value="8" required />
-          </label>
-        </div>
+<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2 style="margin:0">Считаем вместе</h2><button id="clearItems" class="linkbtn danger">Очистить</button></div>
+<p class="muted" style="margin-bottom:9px">Показывать результат в:</p><div id="unitSwitch" class="toolbar"><button class="chip" data-unit="minutes">минутах</button><button class="chip active" data-unit="hours">часах</button><button class="chip" data-unit="days">днях</button><button class="chip" data-unit="months">месяцах</button><button class="chip" data-unit="years">годах</button></div>
+<div id="itemsList"><div class="empty">Добавь первую вещь — она появится здесь.</div></div></section>
 
-        <div class="rate-preview" id="rate-preview">
-          <span>Твой курс</span>
-          <strong>Заполни доход</strong>
-        </div>
+<section id="totalCard" class="card total hidden"><div class="muted">Всё вместе стоит тебе</div><div id="totalValue" class="total-number">—</div><div id="totalMoney" class="muted"></div><div class="actions"><button id="saveSet" class="secondary">Сохранить этот расчёт</button></div></section>
 
-        <button class="primary" type="submit">Продолжить</button>
-      </form>
-    </section>
-
-    <section class="screen" id="screen-item" data-screen="item">
-      <header class="screen-header">
-        <button class="ghost" data-action="back-profile" aria-label="Назад">←</button>
-        <div>
-          <span class="step">Шаг 2 из 2</span>
-          <h2>Что измеряем?</h2>
-        </div>
-      </header>
-
-      <form id="item-form" class="card form-card">
-        <label>
-          <span>Что хочешь купить?</span>
-          <input id="item-name" type="text" maxlength="60" placeholder="Например, PlayStation 5" required />
-        </label>
-
-        <label>
-          <span>Цена</span>
-          <div class="money-input static-currency">
-            <input id="item-price" inputmode="decimal" type="number" min="0" step="1" placeholder="59990" required />
-            <span id="item-currency">₽</span>
-          </div>
-        </label>
-
-        <button class="primary" type="submit">Перевести в мою жизнь</button>
-      </form>
-    </section>
-
-    <section class="screen" id="screen-result" data-screen="result">
-      <header class="screen-header result-header">
-        <button class="ghost" data-action="back-item" aria-label="Назад">←</button>
-        <div>
-          <span class="step">Результат</span>
-          <h2 id="result-item-name">Покупка</h2>
-        </div>
-      </header>
-
-      <div class="result-hero card">
-        <span class="result-label">Это стоит тебе</span>
-        <div class="result-number" id="result-hours">—</div>
-        <div class="result-unit">часов работы</div>
-      </div>
-
-      <div class="result-grid">
-        <article class="metric card">
-          <span>В рабочих днях</span>
-          <strong id="result-days">—</strong>
-        </article>
-        <article class="metric card">
-          <span>Доля месячного дохода</span>
-          <strong id="result-share">—</strong>
-        </article>
-        <article class="metric card wide">
-          <span>Твой личный курс</span>
-          <strong id="result-rate">—</strong>
-        </article>
-      </div>
-
-      <p class="result-note">Та же цена. Просто теперь она что-то значит.</p>
-
-      <div class="actions-stack">
-        <button class="primary" data-action="another-item">Посчитать что-нибудь ещё</button>
-        <button class="secondary" data-action="edit-profile">Изменить мой курс</button>
-      </div>
-    </section>
-  </main>
-
-  <script src="data/config.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/calculator.js"></script>
-  <script src="js/app.js"></script>
-</body>
-</html>
+<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2 style="margin:0">Сохранённые расчёты</h2><button id="clearSaved" class="linkbtn danger">Удалить все</button></div><div id="savedList"><div class="empty">Пока ничего не сохранено.</div></div></section>
+</section>
+<footer class="footer">Курсы валют — информационные, обновляются примерно раз в сутки. <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></footer>
+</main>
+<script>
+const CURRENCIES={RUB:'₽',USD:'$',EUR:'€',ILS:'₪',GBP:'£'}; const LS={profile:'myrate_profile_v011',saved:'myrate_saved_v011',fx:'myrate_fx_v011'};
+const $=id=>document.getElementById(id); let profile=null,items=[],unit='hours',fx=null;
+function fmt(n,max=2){if(!Number.isFinite(n))return '—';return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:max}).format(n)}
+function money(n,c){return fmt(n,2)+' '+(CURRENCIES[c]||c)}
+function fillCurrencies(){for(const id of ['incomeCurrency','itemCurrency']){const s=$(id);s.innerHTML='';Object.entries(CURRENCIES).forEach(([c,sym])=>{const o=document.createElement('option');o.value=c;o.textContent=`${sym} ${c}`;s.append(o)})}}
+function monthlyIncome(p){if(p.period==='week')return p.income*52/12;if(p.period==='year')return p.income/12;return p.income}
+function monthlyHours(p){return p.days*p.hours*52/12} function hourly(p){return monthlyIncome(p)/monthlyHours(p)}
+function saveProfile(){const p={income:+$('income').value,currency:$('incomeCurrency').value,period:$('period').value,days:+$('days').value,hours:+$('hours').value};if(!p.income||!p.days||!p.hours){alert('Заполни доход и рабочий график.');return}profile=p;localStorage.setItem(LS.profile,JSON.stringify(p));showProfile();loadFx(true)}
+function showProfile(){if(!profile)return;$('profileEdit').classList.add('hidden');$('profileView').classList.remove('hidden');$('converter').classList.remove('hidden');$('rateText').textContent=`1 час = ${money(hourly(profile),profile.currency)}`;$('profileText').textContent=`${fmt(profile.income)} ${CURRENCIES[profile.currency]} · ${profile.days} дн./нед. · ${profile.hours} ч/день`;$('itemCurrency').value=profile.currency;render()}
+function editProfile(){$('profileEdit').classList.remove('hidden');$('profileView').classList.add('hidden');$('converter').classList.add('hidden');$('income').value=profile.income;$('incomeCurrency').value=profile.currency;$('period').value=profile.period;$('days').value=profile.days;$('hours').value=profile.hours}
+async function loadFx(force=false){if(!profile)return;const cached=JSON.parse(localStorage.getItem(LS.fx)||'null');const fresh=cached&&cached.base===profile.currency&&(Date.now()-cached.savedAt<86400000);if(fresh&&!force){fx=cached;$('fxStatus').textContent=`Курс валют сохранён: ${new Date(cached.updated*1000).toLocaleDateString('ru-RU')}`;render();return}try{$('fxStatus').textContent='Обновляю курсы валют…';const r=await fetch(`https://open.er-api.com/v6/latest/${profile.currency}`);const d=await r.json();if(d.result!=='success')throw 0;fx={base:profile.currency,rates:d.rates,updated:d.time_last_update_unix,savedAt:Date.now()};localStorage.setItem(LS.fx,JSON.stringify(fx));$('fxStatus').textContent=`Курс валют обновлён: ${new Date(fx.updated*1000).toLocaleDateString('ru-RU')}`;render()}catch(e){if(cached&&cached.base===profile.currency){fx=cached;$('fxStatus').textContent='Нет свежего курса — использую последний сохранённый.';render()}else{$('fxStatus').textContent='Не удалось получить курс валют. В своей валюте считать можно.'}}}
+function toBase(amount,currency){if(currency===profile.currency)return amount;if(!fx||fx.base!==profile.currency||!fx.rates[currency])return NaN;return amount/fx.rates[currency]}
+function addItem(){const name=$('itemName').value.trim(),price=+$('itemPrice').value,qty=+$('itemQty').value,currency=$('itemCurrency').value;if(!name||!price||!qty){alert('Укажи название, цену и количество.');return}if(currency!==profile.currency&&!fx){alert('Для другой валюты сначала нужен курс. Проверь интернет и попробуй ещё раз.');loadFx(true);return}items.push({id:Date.now()+Math.random(),name,price,qty,currency});$('itemName').value='';$('itemPrice').value='';$('itemQty').value=1;render()}
+function hoursFor(it){return toBase(it.price*it.qty,it.currency)/hourly(profile)}
+function unitValue(hours,u){if(u==='minutes')return hours*60;if(u==='days')return hours/profile.hours;if(u==='months')return hours/monthlyHours(profile);if(u==='years')return hours/(profile.days*profile.hours*52);return hours}
+const unitLabel={minutes:'мин',hours:'ч',days:'рабочих дн.',months:'рабочих мес.',years:'рабочих лет'};
+function smart(n,u){let d=u==='minutes'?0:(Math.abs(n)>=100?0:Math.abs(n)>=10?1:2);return `${fmt(n,d)} ${unitLabel[u]}`}
+function render(){if(!profile)return;document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('active',b.dataset.unit===unit));const box=$('itemsList');box.innerHTML='';if(!items.length){box.innerHTML='<div class="empty">Добавь первую вещь — она появится здесь.</div>';$('totalCard').classList.add('hidden')}else{let totalH=0,totalM=0;items.forEach(it=>{const h=hoursFor(it),base=toBase(it.price*it.qty,it.currency);if(Number.isFinite(h)){totalH+=h;totalM+=base}const el=document.createElement('div');el.className='item';el.innerHTML=`<div class="item-top"><div class="item-title"></div><button class="remove" aria-label="Удалить">×</button></div><div class="item-result">${Number.isFinite(h)?smart(unitValue(h,unit),unit):'нужен курс валют'}</div><div class="item-meta">${fmt(it.qty,2)} × ${money(it.price,it.currency)}${it.currency!==profile.currency&&Number.isFinite(base)?` ≈ ${money(base,profile.currency)}`:''}</div>`;el.querySelector('.item-title').textContent=it.name;el.querySelector('.remove').onclick=()=>{items=items.filter(x=>x.id!==it.id);render()};box.append(el)});$('totalCard').classList.remove('hidden');$('totalValue').textContent=smart(unitValue(totalH,unit),unit);$('totalMoney').textContent=`≈ ${money(totalM,profile.currency)} по текущему расчёту`}
+renderSaved()}
+function saveSet(){if(!items.length)return;const saved=JSON.parse(localStorage.getItem(LS.saved)||'[]');saved.unshift({id:Date.now(),date:new Date().toISOString(),profileCurrency:profile.currency,items:items.map(x=>({...x}))});localStorage.setItem(LS.saved,JSON.stringify(saved.slice(0,30)));renderSaved();alert('Расчёт сохранён.')}
+function renderSaved(){const saved=JSON.parse(localStorage.getItem(LS.saved)||'[]'),box=$('savedList');box.innerHTML='';if(!saved.length){box.innerHTML='<div class="empty">Пока ничего не сохранено.</div>';return}saved.forEach(s=>{const e=document.createElement('div');e.className='saved-entry';e.innerHTML=`<div class="saved-title"></div><div class="saved-meta">${new Date(s.date).toLocaleDateString('ru-RU')} · ${s.items.length} поз.</div><button class="linkbtn">Открыть</button>`;e.querySelector('.saved-title').textContent=s.items.map(x=>`${x.name}${x.qty!==1?' ×'+fmt(x.qty,2):''}`).join(', ');e.querySelector('button').onclick=()=>{items=s.items.map(x=>({...x,id:Date.now()+Math.random()}));render();window.scrollTo({top:$('converter').offsetTop,behavior:'smooth'})};box.append(e)})}
+$('saveProfile').onclick=saveProfile;$('editProfile').onclick=editProfile;$('addItem').onclick=addItem;$('clearItems').onclick=()=>{items=[];render()};$('saveSet').onclick=saveSet;$('clearSaved').onclick=()=>{if(confirm('Удалить все сохранённые расчёты?')){localStorage.removeItem(LS.saved);renderSaved()}};$('unitSwitch').onclick=e=>{const b=e.target.closest('[data-unit]');if(b){unit=b.dataset.unit;render()}};
+fillCurrencies();try{profile=JSON.parse(localStorage.getItem(LS.profile)||'null')}catch(e){}if(profile){showProfile();loadFx(false)}else{$('incomeCurrency').value='RUB';$('itemCurrency').value='RUB'}
+</script></body></html>
