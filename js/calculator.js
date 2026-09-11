@@ -1,49 +1,10 @@
-window.MyRateCalculator = (() => {
-  const cfg = window.MY_RATE_CONFIG;
-
-  function monthlyIncome(income, period) {
-    if (period === 'week') return income * cfg.weeksPerYear / cfg.monthsPerYear;
-    if (period === 'year') return income / cfg.monthsPerYear;
-    return income;
-  }
-
-  function monthlyWorkHours(daysPerWeek, hoursPerDay) {
-    return daysPerWeek * hoursPerDay * cfg.weeksPerYear / cfg.monthsPerYear;
-  }
-
-  function hourlyRate(profile) {
-    const income = monthlyIncome(profile.income, profile.incomePeriod);
-    const hours = monthlyWorkHours(profile.daysPerWeek, profile.hoursPerDay);
-    return hours > 0 ? income / hours : 0;
-  }
-
-  function calculateItem(profile, price) {
-    const rate = hourlyRate(profile);
-    const hours = rate > 0 ? price / rate : 0;
-    const workDays = profile.hoursPerDay > 0 ? hours / profile.hoursPerDay : 0;
-    const monthIncome = monthlyIncome(profile.income, profile.incomePeriod);
-    const share = monthIncome > 0 ? (price / monthIncome) * 100 : 0;
-    return { rate, hours, workDays, share };
-  }
-
-  function formatNumber(value, maxFraction = 1) {
-    return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: maxFraction }).format(value);
-  }
-
-  function formatHours(hours) {
-    if (hours < 1) return `${Math.round(hours * 60)} мин`;
-    return `${formatNumber(hours, hours < 10 ? 1 : 0)}`;
-  }
-
-  function formatWorkDays(days, hoursPerDay) {
-    if (days < 1) {
-      const hours = days * hoursPerDay;
-      return hours < 1 ? `${Math.round(hours * 60)} мин` : `${formatNumber(hours, 1)} ч`;
-    }
-    const wholeDays = Math.floor(days);
-    const remainingHours = Math.round((days - wholeDays) * hoursPerDay * 10) / 10;
-    return remainingHours > 0 ? `${wholeDays} дн. ${formatNumber(remainingHours, 1)} ч` : `${wholeDays} дн.`;
-  }
-
-  return { monthlyIncome, monthlyWorkHours, hourlyRate, calculateItem, formatNumber, formatHours, formatWorkDays };
-})();
+const unitLabel={minutes:'мин',hours:'ч',days:'рабочих дн.',months:'рабочих мес.',years:'рабочих лет'};
+function fmt(n,max=2){if(!Number.isFinite(n))return '—';return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:max}).format(n)}
+function money(n,c){return fmt(n,2)+' '+(CURRENCIES[c]||c)}
+function monthlyIncome(p){if(p.period==='week')return p.income*52/12;if(p.period==='year')return p.income/12;return p.income}
+function monthlyHours(p){return p.days*p.hours*52/12}
+function hourly(p){return monthlyIncome(p)/monthlyHours(p)}
+function smart(n,u){let d=u==='minutes'?0:(Math.abs(n)>=100?0:Math.abs(n)>=10?1:2);if(n>0&&n<Math.pow(10,-d)/2)return `< ${fmt(Math.pow(10,-d),d)} ${unitLabel[u]}`;return `${fmt(n,d)} ${unitLabel[u]}`}
+function unitValue(hours,u,p){if(u==='minutes')return hours*60;if(u==='days')return hours/p.hours;if(u==='months')return hours/monthlyHours(p);if(u==='years')return hours/(p.days*p.hours*52);return hours}
+function toBaseFor(amount,currency,p,rateData){if(currency===p.currency)return amount;if(!rateData||rateData.base!==p.currency||!Number.isFinite(rateData.rates?.[currency])||rateData.rates[currency]<=0)return NaN;return amount/rateData.rates[currency]}
+function hoursForItem(it,p,rateData){return toBaseFor(it.price*it.qty,it.currency,p,rateData)/hourly(p)}
