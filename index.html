@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f5f3ee">
-<title>My Rate — сколько мне на это работать?</title>
-<link rel="stylesheet" href="css/styles.css?v=0.1.4">
+<title>My Rate — сколько будет стоить для меня?</title>
+<link rel="stylesheet" href="css/styles.css?v=0.1.6">
 </head>
 <body>
 <main class="app">
 <p id="storageStatus" class="status hidden" role="status"></p>
-<header><div class="brand">MY RATE · ПРОТОТИП</div><h1>Сколько мне<br>на это работать?</h1></header>
+<header><div class="brand">MY RATE · ПРОТОТИП</div><h1>Сколько будет стоить<br>для <u>меня</u>?</h1></header>
 
 <section id="screenCurrent" class="screen active">
   <section id="profileEdit" class="card">
@@ -37,23 +37,24 @@
       <div id="itemsList"><div class="empty">Добавь первую вещь — она появится здесь.</div></div>
     </section>
 
-    <section id="totalCard" class="card total hidden"><div class="muted">Всё вместе стоит тебе</div><div id="totalValue" class="total-number">—</div><div id="totalMoney" class="muted"></div><div class="actions"><button id="saveSet" class="secondary">Сохранить этот расчёт</button></div></section>
+    <section id="totalCard" class="card total hidden"><div class="muted">Всё вместе стоит тебе</div><div id="totalValue" class="total-number">—</div><div id="totalMoney" class="muted"></div></section>
+    <div id="saveSetActions" class="actions hidden"><button id="saveSet" class="primary">Сохранить этот расчёт</button></div>
   </section>
 </section>
 
 <section id="screenSaved" class="screen">
   <h2 class="screen-title">Сохранённые расчёты</h2>
   <div id="savedListView">
-    <div class="saved-toolbar"><button id="combineSaved" class="primary hidden">Объединить выбранные</button><span id="selectedCount" class="status"></span><button id="clearSaved" class="linkbtn danger" style="margin-left:auto">Удалить все</button></div>
+    <div class="saved-toolbar"><span id="selectedCount" class="status"></span><button id="clearSaved" class="linkbtn danger" style="margin-left:auto">Удалить все</button></div>
     <div id="savedList"><div class="empty">Пока ничего не сохранено.</div></div>
   </div>
   <div id="savedDetailView" class="hidden">
-    <div class="detail-top"><button id="savedBack" class="backbtn">← Назад</button><button id="savedDelete" class="linkbtn danger">Удалить</button></div>
+    <div class="detail-top"><button id="savedBack" class="backbtn">← Назад</button><button id="editSaved" class="linkbtn">Изменить расчёт</button><button id="savedDelete" class="linkbtn danger">Удалить</button></div>
     <section class="card"><h2 id="savedDetailTitle">—</h2><div id="savedDetailMeta" class="status"></div>
       <div class="wheel-label" style="margin-top:16px">Посмотреть стоимость в</div><div class="unit-box"><div class="wheel-wrap"><div class="wheel-center"></div><div class="wheel" data-wheel="savedUnit"></div></div></div>
       <div id="savedDetailItems"></div>
     </section>
-    <section class="card total"><div class="muted">Всё вместе стоит тебе</div><div id="savedDetailTotal" class="total-number">—</div><div id="savedDetailMoney" class="muted"></div></section>
+    <section id="savedTotalCard" class="card total hidden"><div class="muted">Всё вместе стоит тебе</div><div id="savedDetailTotal" class="total-number">—</div><div id="savedDetailMoney" class="muted"></div></section>
   </div>
 </section>
 
@@ -61,18 +62,39 @@
   <h2 class="screen-title">Проекты</h2>
   <div id="projectsListView"><div id="projectsList"><div class="empty">Пока нет проектов.</div></div></div>
   <div id="projectDetailView" class="hidden">
-    <div class="detail-top"><button id="projectBack" class="backbtn">← Назад</button><button id="projectDelete" class="linkbtn danger">Удалить</button></div>
+    <div class="detail-top"><button id="projectBack" class="backbtn">← Назад</button><button id="editProject" class="linkbtn">Изменить проект</button><button id="projectDelete" class="linkbtn danger">Удалить</button></div>
     <section class="card"><h2 id="projectDetailTitle">—</h2><div id="projectDetailMeta" class="status"></div>
       <div class="wheel-label" style="margin-top:16px">Посмотреть стоимость в</div><div class="unit-box"><div class="wheel-wrap"><div class="wheel-center"></div><div class="wheel" data-wheel="projectUnit"></div></div></div>
       <div id="projectDetailGroups"></div>
     </section>
-    <section class="card total"><div class="muted">Всё вместе стоит тебе</div><div id="projectDetailTotal" class="total-number">—</div><div id="projectDetailMoney" class="muted"></div></section>
+    <section id="projectTotalCard" class="card total hidden"><div class="muted">Всё вместе стоит тебе</div><div id="projectDetailTotal" class="total-number">—</div><div id="projectDetailMoney" class="muted"></div></section>
   </div>
+</section>
+
+<section id="screenEditor" class="screen">
+  <div class="detail-top"><button id="cancelEdit" class="backbtn" type="button">← Отмена</button><h2 id="editorHeading" class="screen-title" tabindex="-1">Изменить расчёт</h2></div>
+  <p id="editorNote" class="status"></p>
+  <form id="recordEditForm">
+    <label for="editorTitle">Название</label><input id="editorTitle" maxlength="240" required>
+    <div id="editorGroups"></div>
+    <section id="editorAddGroup" class="card hidden">
+      <label for="editorSource">Добавить сохранённый расчёт</label>
+      <select id="editorSource"></select>
+      <button id="editorAddCalculation" class="secondary" type="button">Добавить в проект</button>
+    </section>
+    <p id="editorError" role="alert" class="editor-error"></p>
+    <div class="editor-actions"><button id="saveEditedRecord" class="primary" type="submit">Сохранить изменения</button></div>
+  </form>
 </section>
 
 <p class="footer">Расчёт приблизительный: 52 рабочие недели в год, без вычета отпуска и праздников. Укажи доход, которым располагаешь. Сохранённые расчёты хранят доход и курсы на момент сохранения.</p>
 <footer class="footer">Курсы валют — информационные, обновляются примерно раз в сутки. <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></footer>
 </main>
+
+<aside id="combineDock" class="combine-dock hidden" aria-label="Объединение расчётов">
+  <p id="combineHint" class="combine-hint" role="status">Можно объединить выбранные расчёты в один проект.</p>
+  <button id="combineSaved" class="primary">Объединить выбранные</button>
+</aside>
 
 <nav id="bottomNav" class="bottom-nav hidden" aria-label="Разделы">
   <button class="navbtn active" data-screen="Current">Текущий расчёт</button>
@@ -82,9 +104,10 @@
 
 <div id="modalLayer" class="modal-layer hidden"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText"><h3 id="modalTitle"></h3><p id="modalText"></p><input id="modalInput" aria-labelledby="modalTitle" class="hidden" maxlength="80"><div class="modal-actions"><button id="modalCancel" class="secondary hidden">Отмена</button><button id="modalOk" class="primary">Понятно</button></div></div></div>
 
-<script src="data/config.js?v=0.1.4"></script>
-<script src="js/calculator.js?v=0.1.4"></script>
-<script src="js/storage.js?v=0.1.4"></script>
-<script src="js/app.js?v=0.1.4"></script>
+<script src="data/config.js?v=0.1.6"></script>
+<script src="js/calculator.js?v=0.1.6"></script>
+<script src="js/storage.js?v=0.1.6"></script>
+<script src="js/app.js?v=0.1.6"></script>
+<script src="js/editor.js?v=0.1.6"></script>
 </body>
 </html>

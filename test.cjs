@@ -1,0 +1,194 @@
+const {JSDOM,VirtualConsole}=require('jsdom');
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const html=fs.readFileSync(root+'/index.html','utf8');
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const checks=[];
+function check(name,fn){fn();checks.push(name);console.log('PASS '+name)}
+const p={income:150000,period:'month',days:5,hours:8,currency:'RUB'};
+const rates={base:'RUB',rates:{RUB:1,USD:.01,EUR:.009,ILS:.037,GBP:.008},updated:1789084800,savedAt:Date.now()};
+const item=(id='i',price=150000,currency='RUB')=>({id,name:'Тест '+id,price,qty:1,currency});
+const calc=(id='c',pr=p,its=[item()],fx=null)=>({id,title:'Расчёт '+id,date:'2026-09-11',items:its,profile:pr,fx,displayUnit:'hours'});
+function env(seed={},fetcher=null,blocked=false){
+ const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
+ const d=new JSDOM(html,{url:'https://example.test/myrate/',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});const w=d.window;
+ for(const [k,v] of Object.entries(seed))w.localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));
+ if(blocked)w.Storage.prototype.setItem=function(){throw new w.DOMException('Quota','QuotaExceededError')};
+ w.scrollTo=()=>{};
+ // DOM simulation: only visibility/scroll positions; no browser layout or native touch physics.
+ w.HTMLElement.prototype.getClientRects=function(){return this.closest('.hidden')||this.closest('.screen:not(.active)')?[]:[{x:0,y:0,width:100,height:144}]};
+ w.fetch=fetcher||(async()=>({ok:true,json:async()=>({result:'success',base_code:'RUB',rates:rates.rates,time_last_update_unix:rates.updated})}));
+ const ctx=d.getInternalVMContext();
+ for(const script of [...w.document.querySelectorAll('script[src]')])vm.runInContext(fs.readFileSync(root+'/'+script.getAttribute('src').split('?')[0],'utf8'),ctx,{filename:script.src});
+ const run=s=>vm.runInContext(s,ctx);return {d,w,run,errors,close:()=>w.close()};
+}
+(async()=>{
+const e=env();const {w,run}=e; const $=id=>w.document.getElementById(id);
+check('All HTML resources exist; unique IDs',()=>{const ids=[...w.document.querySelectorAll('[id]')].map(x=>x.id);assert.equal(ids.length,new Set(ids).size);for(const x of w.document.querySelectorAll('[src],link[href]'))assert.ok(fs.existsSync(root+'/'+(x.getAttribute('src')||x.getAttribute('href')).split('?')[0]))});
+check('Monthly/weekly/yearly income conversions',()=>{assert.equal(run('monthlyIncome({income:1200,period:"year"})'),100);assert.equal(run('monthlyIncome({income:1200,period:"week"})'),5200);assert.equal(run('monthlyIncome({income:1200,period:"month"})'),1200)});
+check('150000 / (5×8×52/12) = 865.384615… per hour',()=>assert.ok(Math.abs(run('hourly('+JSON.stringify(p)+')')-865.3846153846154)<1e-9));
+check('60000 = 69.3333 hours = 8.6667 days = 0.4 months',()=>{const h=run('hoursForItem('+JSON.stringify(item('x',60000))+','+JSON.stringify(p)+',null)');assert.ok(Math.abs(h-69.33333333333333)<1e-9);assert.ok(Math.abs(run(`unitValue(${h},'days',${JSON.stringify(p)})`)-8.666666666666666)<1e-9);assert.ok(Math.abs(run(`unitValue(${h},'months',${JSON.stringify(p)})`)-.4)<1e-9)});
+check('Cross-currency division: USD 100 × qty 2 = RUB 20000',()=>assert.equal(run('toBaseFor(200,"USD",'+JSON.stringify(p)+','+JSON.stringify(rates)+')'),20000));
+check('Invalid values rejected (negative, zero, infinity, unknown currency)',()=>{for(const q of [{...p,income:0},{...p,income:-1},{...p,days:8},{...p,hours:25},{...p,currency:'<img>'}])assert.equal(run('validProfile('+JSON.stringify(q)+')'),false);assert.equal(run('validProfile({...'+JSON.stringify(p)+',income:Infinity})'),false);assert.equal(run('validItem('+JSON.stringify(item('x',-5))+')'),false)});
+check('Tiny positive durations do not display zero',()=>{assert.match(run("smart(0.000001,'hours')"),/^< /);assert.match(run("smart(.001,'minutes')"),/^< /)});
+$('income').value='-1';$('saveProfile').click();await delay(5);
+check('Invalid profile shows message, does not navigate',()=>{assert.equal($('modalTitle').textContent,'Проверь данные');assert.equal($('profileEdit').classList.contains('hidden'),false)});$('modalOk').click();
+$('income').value='150000';$('saveProfile').click();await delay(30);
+check('Profile save opens converter with correctly positioned hours wheel',()=>{assert.ok(!$('converter').classList.contains('hidden'));assert.equal(run("getWheel('unit').scrollTop"),48);assert.equal(run('unit'),'hours')});
+$('itemName').value='<img src=x onerror=alert(1)>'; $('itemPrice').value='60000';$('addItem').click();await delay(5);
+check('Add item renders escaped title and correct result',()=>{assert.equal($('itemsList').querySelectorAll('img').length,0);assert.match($('totalValue').textContent,/69,3 ч/)});
+check('Single position hides total but keeps Save button',()=>{assert.ok($('totalCard').classList.contains('hidden'));assert.ok(!$('saveSetActions').classList.contains('hidden'));assert.ok(!$('saveSet').disabled)});
+const wheel=run("getWheel('unit')");wheel.scrollTop=96;wheel.dispatchEvent(new w.Event('scroll'));await delay(210);
+check('Wheel scroll commits unit AND recomputes total',()=>{assert.equal(run('unit'),'days');assert.match($('totalValue').textContent,/8,67 рабочих дн/)});
+wheel.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+check('Wheel keyboard selection updates total',()=>assert.match($('totalValue').textContent,/0,4 рабочих мес/));
+$('saveSet').click();await delay(5);check('Save creates immutable snapshot',()=>{assert.equal(run('getCalculations().length'),1);assert.equal(run('getCalculations()[0].profile.income'),150000)});$('modalOk').click();
+check('Headline restored with only меня underlined',()=>{assert.equal(w.document.querySelector('h1').textContent,'Сколько будет стоитьдля меня?');assert.equal(w.document.querySelector('h1 u').textContent,'меня')});
+check('Successful save clears current list, form and persisted draft, keeps profile',()=>{assert.equal(run('items.length'),0);assert.equal($('itemName').value,'');assert.equal($('itemPrice').value,'');assert.equal($('itemQty').value,'1');assert.equal(run('profile.income'),150000);assert.equal(JSON.parse(w.localStorage.getItem('myrate_current_v014')).items.length,0)});
+const first=run('getCalculations()[0].id');
+$('clearItems').click();$('itemName').value='Второй';$('itemPrice').value='30000';$('addItem').click();await delay(5);$('saveSet').click();await delay(5);$('modalOk').click();
+w.document.querySelector('[data-screen="Saved"]').click();await delay(5);
+check('Saved navigation shows both records',()=>assert.equal($('savedList').querySelectorAll('.saved-card').length,2));
+for(const ch of $('savedList').querySelectorAll('input')){ch.checked=true;ch.dispatchEvent(new w.Event('change'))}
+$('combineSaved').click();await delay(5);$('modalInput').value='Тест проекта';$('modalOk').click();await delay(5);$('modalOk').click();
+check('Combine keeps originals and snapshots project',()=>{assert.equal(run('getProjects().length'),1);assert.equal(run('getCalculations().length'),2);assert.equal(run('getProjects()[0].calculations.length'),2)});
+w.document.querySelector('[data-screen="Projects"]').click();await delay(5);$('projectsList').querySelector('.open').click();await delay(5);
+check('Project opens; display unit matches wheel position',()=>{assert.equal($('projectDetailTitle').textContent,'Тест проекта');assert.equal(run("getWheel('projectUnit').scrollTop"),48)});
+run("selectWheel('projectUnit','months',false,true)");
+check('Project unit persists independently',()=>assert.equal(run('getProjects()[0].displayUnit'),'months'));
+$('projectBack').click();await delay(5);$('projectsList').querySelector('.rename').click();await delay(5);$('modalInput').value='Новое имя';$('modalOk').click();await delay(5);
+check('Project rename persists',()=>assert.equal(run('getProjects()[0].title'),'Новое имя'));
+$('projectsList').querySelector('.del').click();await delay(5);$('modalCancel').click();await delay(5);
+check('Cancel deletion preserves project',()=>assert.equal(run('getProjects().length'),1));
+const saved={};for(let i=0;i<w.localStorage.length;i++){const k=w.localStorage.key(i);saved[k]=w.localStorage.getItem(k)}
+const reload=env(saved);await delay(30);
+check('Reload restores draft, unit, profile, calculations and project',()=>{assert.equal(reload.run('items.length'),0);assert.equal(reload.run('unit'),'months');assert.equal(reload.run('getCalculations().length'),2);assert.equal(reload.run('getProjects().length'),1);assert.equal(reload.run('profile.income'),150000)});reload.close();
+const mixed={calculations:[calc('a',p,[item('a',150000)]),calc('b',{...p,income:1000,currency:'USD',hours:4},[item('b',1000,'USD')])]};
+check('Mixed project money remains separate: RUB 150000 + USD 1000',()=>assert.equal(run('projectMoney('+JSON.stringify(mixed)+')'),'150 000 ₽ + 1 000 $'));
+check('Mixed schedules summed per record: 2 working months',()=>assert.equal(run('projectTime('+JSON.stringify(mixed)+',"months")'),'2 рабочих мес.'));
+check('No-rate item invalidates complete total (no silent omission)',()=>{run('profile='+JSON.stringify(p)+';items='+JSON.stringify([item('a',100),item('b',100,'USD')])+';fx=null');assert.ok(Number.isNaN(run('currentSummary().h')));run('renderCurrent()');assert.equal($('totalValue').textContent,'Нужен курс валют');assert.equal($('saveSet').disabled,true)});
+check('Saved missing FX never uses live FX',()=>{run('fx='+JSON.stringify(rates));assert.ok(Number.isNaN(run('calculationSummary('+JSON.stringify(calc('bad',p,[item('x',100,'USD')]))+').h')))});
+const badMixed={calculations:[calc('bad',p,[item('x',100,'USD')]),calc('good')]};
+check('Invalid project subtotal cannot recover to partial total',()=>assert.match(run('projectMoney('+JSON.stringify(badMixed)+')'),/Нужен курс RUB/));
+check('List writes retain more than former 100/50 record limits',()=>{run('putCalculations(Array.from({length:101},(_,i)=>({...'+JSON.stringify(calc())+',id:String(i)})))');assert.equal(run('getCalculations().length'),101);run('putProjects(Array.from({length:51},(_,i)=>({id:String(i),title:"p",calculations:['+JSON.stringify(calc())+']})))');assert.equal(run('getProjects().length'),51)});
+check('Russian pluralization 11, 21, 22, 25',()=>{assert.equal(run('positionWord(11)'),'позиций');assert.equal(run('positionWord(21)'),'позиция');assert.equal(run('positionWord(22)'),'позиции');assert.equal(run('positionWord(25)'),'позиций')});
+check('No uncaught DOM runtime errors in normal flow',()=>assert.deepEqual(e.errors,[]));e.close();
+const corrupt=env({'myrate_calculations_v013':'{broken','myrate_profile_v011':p});await delay(20);
+check('Corrupt JSON retained and writes blocked',()=>{assert.equal(corrupt.run('getCalculations().length'),0);assert.throws(()=>corrupt.run('putCalculations([])'));assert.equal(corrupt.w.localStorage.getItem('myrate_calculations_v013'),'{broken')});corrupt.close();
+const partial=env({'myrate_calculations_v013':[calc(),{id:'broken'}]});
+check('Valid records readable beside corrupt record; original protected',()=>{assert.equal(partial.run('getCalculations().length'),1);assert.throws(()=>partial.run('putCalculations([])'))});partial.close();
+const quota=env({},null,true);quota.w.document.getElementById('income').value=150000;quota.w.document.getElementById('saveProfile').click();await delay(10);
+check('Storage quota failure shown; no false saved success or crash',()=>{assert.equal(quota.w.document.getElementById('modalTitle').textContent,'Не удалось сохранить');assert.deepEqual(quota.errors,[])});quota.close();
+const legacy=env({'myRate.profile.v1':{income:150000,incomePeriod:'month',daysPerWeek:5,hoursPerDay:8,currency:'₽'}});await delay(20);
+check('Earlier alpha profile imported without deleting source',()=>{assert.equal(legacy.run('profile.income'),150000);assert.ok(legacy.w.localStorage.getItem('myRate.profile.v1'))});legacy.close();
+const offline=env({'myrate_profile_v011':p},async()=>{throw Error('offline')});await delay(20);
+check('Offline same-currency remains available, foreign conversion blocked',()=>{assert.match(offline.w.document.getElementById('fxStatus').textContent,/В своей валюте считать можно/);assert.equal(offline.run('toBaseFor(100,"RUB",profile,fx)'),100);assert.ok(Number.isNaN(offline.run('toBaseFor(100,"USD",profile,fx)')))});offline.close();
+const expired={...rates,savedAt:Date.now()-2*86400000};
+const stale=env({'myrate_profile_v011':p,'myrate_fx_v011':expired},async()=>{throw Error('offline')});await delay(20);
+check('Offline stale cache used with explicit stale warning',()=>{assert.equal(stale.run('toBaseFor(100,"USD",profile,fx)'),10000);assert.match(stale.w.document.getElementById('fxStatus').textContent,/Нет свежего курса/)});stale.close();
+const missing=env({'myrate_profile_v011':p},async()=>({ok:true,json:async()=>({result:'success',base_code:'RUB',rates:{RUB:1},time_last_update_unix:rates.updated})}));await delay(20);
+check('Malformed API success is rejected, not cached',()=>{assert.equal(missing.run('fx'),null);assert.equal(missing.w.localStorage.getItem('myrate_fx_v011'),null)});missing.close();
+const pending=[];const race=env({},url=>new Promise(resolve=>pending.push({url,resolve})));
+race.run('profile='+JSON.stringify(p)+';void loadFx(true)');
+race.run('profile={...profile,currency:"USD"};void loadFx(true)');
+const usd={RUB:100,USD:1,EUR:.9,ILS:3.7,GBP:.8};
+pending[1].resolve({ok:true,json:async()=>({result:'success',base_code:'USD',rates:usd,time_last_update_unix:rates.updated})});await delay(10);
+pending[0].resolve({ok:true,json:async()=>({result:'success',base_code:'RUB',rates:rates.rates,time_last_update_unix:rates.updated})});await delay(10);
+check('Late FX response cannot overwrite new profile currency',()=>assert.equal(race.run('fx.base'),'USD'));race.close();
+const legacyRecords=[{id:'old',title:'История',items:[item()],date:'2026-01-01'}];
+const old=env({'myrate_profile_v011':p,'myrate_saved_v011':legacyRecords});await delay(20);
+check('Legacy record without snapshots is preserved, not silently repriced',()=>{assert.equal(old.w.localStorage.getItem('myrate_saved_v011'),JSON.stringify(legacyRecords));assert.equal(old.run('getCalculations().length'),0);assert.match(old.w.document.getElementById('storageStatus').textContent,/старые записи/)});old.close();
+const del=env({'myrate_profile_v011':p,'myrate_calculations_v013':[calc()]});await delay(20);
+del.w.document.querySelector('[data-screen="Saved"]').click();await delay(5);del.w.document.querySelector('#savedList .open').click();await delay(5);
+const sw=del.run("getWheel('savedUnit')");sw.scrollTop=96;sw.dispatchEvent(new del.w.Event('scroll'));await delay(200);
+check('Saved detail scroll persists unit and updates visible result',()=>{assert.equal(del.run('getCalculations()[0].displayUnit'),'days');assert.match(del.w.document.getElementById('savedDetailTotal').textContent,/рабочих дн/)});
+del.w.document.getElementById('savedDelete').click();await delay(5);del.w.document.getElementById('modalOk').click();await delay(5);
+check('Confirmed delete removes only selected saved record',()=>assert.equal(del.run('getCalculations().length'),0));del.close();
+const touch=env({'myrate_profile_v011':p,'myrate_calculations_v013':[calc()]});await delay(20);
+touch.run('items='+JSON.stringify([item('touch',150000)])+';renderCurrent()');
+const tw=touch.run("getWheel('unit')");tw.dispatchEvent(new touch.w.Event('touchstart'));
+check('All five units recompute DURING touch without waiting for touchend',()=>{
+ for(const [idx,label] of [[0,'10 400 мин'],[1,'173 ч'],[2,'21,7 рабочих дн.'],[3,'1 рабочих мес.'],[4,'0,08 рабочих лет']]){
+  tw.scrollTop=idx*48;tw.dispatchEvent(new touch.w.Event('scroll'));
+  assert.equal(touch.w.document.querySelector('#itemsList .item-result').textContent,label);
+ }
+});
+touch.run('items.push('+JSON.stringify(item('second'))+');renderCurrent()');
+check('Total appears with second position; disappears after removal',()=>{assert.ok(!touch.w.document.getElementById('totalCard').classList.contains('hidden'));touch.run('items.pop();renderCurrent()');assert.ok(touch.w.document.getElementById('totalCard').classList.contains('hidden'))});
+touch.run("switchScreen('Saved');openSaved('c')");
+const tsw=touch.run("getWheel('savedUnit')");tsw.dispatchEvent(new touch.w.Event('touchstart'));
+check('Saved detail all five units recompute during touch; no duplicate single total',()=>{
+ assert.ok(touch.w.document.getElementById('savedTotalCard').classList.contains('hidden'));
+ for(const [idx,label] of [[0,'10 400 мин'],[1,'173 ч'],[2,'21,7 рабочих дн.'],[3,'1 рабочих мес.'],[4,'0,08 рабочих лет']]){
+  tsw.scrollTop=idx*48;tsw.dispatchEvent(new touch.w.Event('scroll'));
+  assert.equal(touch.w.document.querySelector('#savedDetailItems .item-result').textContent,label);
+ }
+});
+const singleProject={id:'sp',title:'Single',calculations:[calc()],displayUnit:'hours'};
+touch.run('putProjects(['+JSON.stringify(singleProject)+']);switchScreen("Projects");openProject("sp")');
+check('Single-calculation project hides total and single-item group subtotal',()=>{assert.ok(touch.w.document.getElementById('projectTotalCard').classList.contains('hidden'));assert.equal(touch.w.document.querySelectorAll('.group-total').length,0)});
+const doubleProject={id:'dp',title:'Double',calculations:[calc('one'),calc('two')],displayUnit:'hours'};
+touch.run('putProjects(['+JSON.stringify(doubleProject)+']);openProject("dp")');
+const tpw=touch.run("getWheel('projectUnit')");tpw.dispatchEvent(new touch.w.Event('touchstart'));
+check('Two-calculation project total visible and all five units recompute during touch',()=>{
+ assert.ok(!touch.w.document.getElementById('projectTotalCard').classList.contains('hidden'));
+ for(const [idx,label] of [[0,'20 800 мин'],[1,'347 ч'],[2,'43,3 рабочих дн.'],[3,'2 рабочих мес.'],[4,'0,17 рабочих лет']]){
+  tpw.scrollTop=idx*48;tpw.dispatchEvent(new touch.w.Event('scroll'));
+  assert.equal(touch.w.document.getElementById('projectDetailTotal').textContent,label);
+ }
+});touch.close();
+
+const c1=calc('edit1',p,[item('ei1',1000)]),c2=calc('edit2',p,[item('ei2',2000)]),c3=calc('edit3',p,[item('ei3',3000)]);
+const ep={id:'ep',title:'Проект для правки',date:'2026-09-11',displayUnit:'hours',calculations:[c1,c2]};
+const edit=env({'myrate_profile_v011':p,'myrate_calculations_v013':[c1,c2,c3],'myrate_projects_v013':[ep],'myrate_current_v014':{items:[item('draft',777)],unit:'days'}});
+await delay(20);
+const ed=edit.w.document;
+edit.run("switchScreen('Saved')");
+const pick=ed.querySelectorAll('#savedList .saved-check');
+pick[0].click();await delay(5);
+check('One selection: bottom hint and action hidden',()=>assert.ok(ed.getElementById('combineDock').classList.contains('hidden')));
+pick[1].click();await delay(5);
+check('Two selections: fixed action and nonblocking hint shown',()=>{assert.ok(!ed.getElementById('combineDock').classList.contains('hidden'));assert.ok(edit.w.document.body.classList.contains('selection-active'));assert.equal(ed.querySelectorAll('#combineSaved').length,1);assert.equal(ed.getElementById('combineHint').getAttribute('role'),'status')});
+edit.run("openSaved('edit1')");
+check('Opening details hides selection dock without losing selection',()=>{assert.ok(ed.getElementById('combineDock').classList.contains('hidden'));assert.equal(edit.run('selectedSaved.size'),2)});
+ed.getElementById('editSaved').click();await delay(5);
+check('Saved edit opens isolated form and leaves current draft untouched',()=>{assert.equal(edit.run('recordEdit.kind'),'calculation');assert.equal(edit.run('items[0].price'),777);assert.ok(ed.getElementById('screenEditor').classList.contains('active'));assert.ok(ed.getElementById('bottomNav').classList.contains('hidden'))});
+function inputValue(el,value,win){el.value=String(value);el.dispatchEvent(new win.Event('input',{bubbles:true}));}
+let inputs=ed.querySelectorAll('#editorGroups input[type=number]');
+inputValue(inputs[0],500,edit.w);inputValue(inputs[1],2,edit.w);inputValue(ed.getElementById('editorTitle'),'Изменённый расчёт',edit.w);
+ed.getElementById('recordEditForm').dispatchEvent(new edit.w.Event('submit',{bubbles:true,cancelable:true}));await delay(5);
+check('Save updates same record, recalculates price×quantity, leaves project copy intact',()=>{assert.equal(edit.run('getCalculations().length'),3);assert.equal(edit.run('getCalculations()[0].title'),'Изменённый расчёт');assert.equal(edit.run('calculationSummary(getCalculations()[0]).m'),1000);assert.equal(edit.run('getProjects()[0].calculations[0].items[0].price'),1000);assert.equal(edit.run('items[0].price'),777);assert.equal(edit.run('recordEdit'),null)});
+ed.getElementById('editSaved').click();await delay(5);
+inputValue(ed.querySelector('#editorGroups input[type=number]'),999,edit.w);
+ed.getElementById('cancelEdit').click();await delay(5);ed.getElementById('modalOk').click();await delay(5);
+check('Cancel discards edited copy, preserves source',()=>{assert.equal(edit.run('recordEdit'),null);assert.equal(edit.run('getCalculations()[0].items[0].price'),500)});
+edit.run("switchScreen('Projects');openProject('ep')");ed.getElementById('editProject').click();await delay(5);
+inputValue(ed.querySelector('#editorGroups input[type=number]'),700,edit.w);
+const removeGroups=[...ed.querySelectorAll('#editorGroups button')].filter(x=>x.textContent==='Убрать из проекта');
+removeGroups[1].click();await delay(5);
+ed.getElementById('editorSource').value='edit3';ed.getElementById('editorSource').dispatchEvent(new edit.w.Event('change'));ed.getElementById('editorAddCalculation').click();await delay(5);
+ed.getElementById('recordEditForm').dispatchEvent(new edit.w.Event('submit',{bubbles:true,cancelable:true}));await delay(5);
+check('Project can edit items, remove group and add a saved calculation without changing sources',()=>{assert.equal(edit.run('getProjects().length'),1);assert.equal(edit.run('getProjects()[0].calculations[0].items[0].price'),700);assert.equal(edit.run('getProjects()[0].calculations[1].id'),'edit3');assert.equal(edit.run('getCalculations()[0].items[0].price'),500);assert.equal(edit.run('getCalculations()[1].id'),'edit2');assert.equal(edit.run('projectSummary(getProjects()[0]).amounts.RUB'),3700)});
+ed.getElementById('editProject').click();await delay(5);
+const removeItems=[...ed.querySelectorAll('#editorGroups button')].filter(x=>x.textContent==='Убрать позицию');removeItems[0].click();await delay(5);
+ed.getElementById('recordEditForm').dispatchEvent(new edit.w.Event('submit',{bubbles:true,cancelable:true}));
+check('Empty calculation cannot be saved',()=>{assert.ok(edit.run('recordEdit'));assert.match(ed.getElementById('editorError').textContent,/хотя бы одна позиция/);assert.equal(edit.run('getProjects()[0].calculations[0].items.length'),1)});
+const addItems=[...ed.querySelectorAll('#editorGroups button')].filter(x=>x.textContent==='+ Добавить позицию');addItems[0].click();await delay(5);
+const newRow=ed.querySelector('#editorGroups .edit-item');inputValue(newRow.querySelector('input:not([type=number])'),'Новая позиция',edit.w);inputValue(newRow.querySelector('input[type=number]'),900,edit.w);
+ed.getElementById('recordEditForm').dispatchEvent(new edit.w.Event('submit',{bubbles:true,cancelable:true}));await delay(5);
+check('New position added through editor and saved',()=>{assert.equal(edit.run('getProjects()[0].calculations[0].items[0].name'),'Новая позиция');assert.equal(edit.run('getProjects()[0].calculations[0].items[0].price'),900)});
+edit.run("switchScreen('Saved');openRecordEditor('calculation','edit1')");
+inputValue(ed.getElementById('editorTitle'),'Локальная правка',edit.w);
+edit.run("let external=getCalculations();external[0].title='Другая вкладка';putCalculations(external)");
+ed.getElementById('recordEditForm').dispatchEvent(new edit.w.Event('submit',{bubbles:true,cancelable:true}));
+check('Concurrent record change blocks overwrite and retains form',()=>{assert.match(ed.getElementById('editorError').textContent,/другой вкладке/);assert.equal(edit.run('getCalculations()[0].title'),'Другая вкладка');assert.ok(edit.run('recordEdit'))});
+check('No uncaught DOM errors in new editing flow',()=>assert.deepEqual(edit.errors,[]));edit.close();
+const failEdit=env({'myrate_profile_v011':p,'myrate_calculations_v013':[c1]});await delay(20);
+failEdit.run("openRecordEditor('calculation','edit1')");
+inputValue(failEdit.w.document.getElementById('editorTitle'),'Не потерять',failEdit.w);
+failEdit.w.Storage.prototype.setItem=function(){throw new failEdit.w.DOMException('Quota','QuotaExceededError')};
+failEdit.w.document.getElementById('recordEditForm').dispatchEvent(new failEdit.w.Event('submit',{bubbles:true,cancelable:true}));
+check('Save failure keeps editor draft and original record',()=>{assert.equal(failEdit.run('recordEdit.draft.title'),'Не потерять');assert.equal(failEdit.run('getCalculations()[0].title'),c1.title);assert.match(failEdit.w.document.getElementById('editorError').textContent,/не сохранил/)});failEdit.close();
+console.log(`\n${checks.length} checks passed. DOM simulation only; no visual or real touch verification.`);
+fs.writeFileSync(__dirname+'/results.json',JSON.stringify({passed:checks.length,checks,limitations:['DOM simulation; no browser layout or real iPhone touch verification','Live FX endpoint not verified; fetch mocked']},null,2));
+})().catch(e=>{console.error(e);process.exitCode=1});
