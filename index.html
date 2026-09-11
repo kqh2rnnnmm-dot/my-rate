@@ -14,7 +14,7 @@
     <header class="topbar">
       <div>
         <div class="brand">MY RATE</div>
-        <h1>Сколько будет стоить<br>для <span class="wide-word">меня?</span></h1>
+        <h1>Сколько будет стоить<br>для <span class="wide-word">МЕНЯ?</span></h1>
       </div>
       <button id="settingsButton" class="icon-button settings-button" aria-label="Настройки" title="Настройки"><span aria-hidden="true">⚙</span></button>
     </header>
@@ -73,7 +73,7 @@
 
     <section id="screenProjects" class="screen" aria-labelledby="projectsHeading">
       <div class="page-heading-row"><div><div class="kicker">Когда одной карточкой не обойтись</div><h2 id="projectsHeading" class="screen-title">Большие планы</h2></div><button class="icon-button" type="button" data-open-archive="projects" aria-label="Открыть Архив">▱</button></div>
-      <div id="projectsListView"><div id="projectsList" class="card-list"></div></div>
+      <div id="projectsListView"><div class="toolbar"><button id="clearProjects" class="text-button danger hidden" type="button">Удалить всё</button></div><div id="projectsList" class="card-list"></div></div>
       <div id="projectDetailView" class="hidden">
         <div class="detail-toolbar"><button id="projectBack" class="back-button" type="button">← Назад</button><button id="projectDetailMenu" class="dots-button" type="button" aria-label="Действия с большим планом">•••</button></div>
         <section class="surface detail-surface"><div class="kicker" id="projectDetailMeta"></div><h3 id="projectDetailTitle" class="detail-title">—</h3><div class="field-block result-wheel-block"><div class="label-row wheel-field-label centered"><span>Показать стоимость в…</span></div><div class="wheel unit-wheel" data-wheel="projectUnit" aria-label="Единицы результата большого плана"></div></div><div id="projectDetailGroups"></div></section>
