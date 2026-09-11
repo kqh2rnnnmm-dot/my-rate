@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>My Rate — сколько это стоит тебе</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="screen active" id="screen-start" data-screen="start">
+      <div class="hero">
+        <span class="eyebrow">MY RATE</span>
+        <h1>Сколько это стоит <em>тебе?</em></h1>
+        <p class="lead">Переведи деньги в часы своей работы.</p>
+        <button class="primary" data-action="go-profile">Посчитать</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-profile" data-screen="profile">
+      <header class="screen-header">
+        <button class="ghost" data-action="back-start" aria-label="Назад">←</button>
+        <div>
+          <span class="step">Шаг 1 из 2</span>
+          <h2>Твой личный курс</h2>
+        </div>
+      </header>
+
+      <form id="profile-form" class="card form-card">
+        <label>
+          <span>Сколько ты зарабатываешь?</span>
+          <div class="money-input">
+            <input id="income" inputmode="decimal" type="number" min="0" step="100" placeholder="150000" required />
+            <select id="currency" aria-label="Валюта">
+              <option value="₽">₽</option>
+              <option value="$">$</option>
+              <option value="€">€</option>
+              <option value="₪">₪</option>
+              <option value="£">£</option>
+            </select>
+          </div>
+        </label>
+
+        <label>
+          <span>Период дохода</span>
+          <select id="income-period">
+            <option value="month">В месяц</option>
+            <option value="week">В неделю</option>
+            <option value="year">В год</option>
+          </select>
+        </label>
+
+        <div class="split">
+          <label>
+            <span>Дней в неделю</span>
+            <input id="days-per-week" inputmode="decimal" type="number" min="1" max="7" step="0.5" value="5" required />
+          </label>
+          <label>
+            <span>Часов в день</span>
+            <input id="hours-per-day" inputmode="decimal" type="number" min="0.5" max="24" step="0.5" value="8" required />
+          </label>
+        </div>
+
+        <div class="rate-preview" id="rate-preview">
+          <span>Твой курс</span>
+          <strong>Заполни доход</strong>
+        </div>
+
+        <button class="primary" type="submit">Продолжить</button>
+      </form>
+    </section>
+
+    <section class="screen" id="screen-item" data-screen="item">
+      <header class="screen-header">
+        <button class="ghost" data-action="back-profile" aria-label="Назад">←</button>
+        <div>
+          <span class="step">Шаг 2 из 2</span>
+          <h2>Что измеряем?</h2>
+        </div>
+      </header>
+
+      <form id="item-form" class="card form-card">
+        <label>
+          <span>Что хочешь купить?</span>
+          <input id="item-name" type="text" maxlength="60" placeholder="Например, PlayStation 5" required />
+        </label>
+
+        <label>
+          <span>Цена</span>
+          <div class="money-input static-currency">
+            <input id="item-price" inputmode="decimal" type="number" min="0" step="1" placeholder="59990" required />
+            <span id="item-currency">₽</span>
+          </div>
+        </label>
+
+        <button class="primary" type="submit">Перевести в мою жизнь</button>
+      </form>
+    </section>
+
+    <section class="screen" id="screen-result" data-screen="result">
+      <header class="screen-header result-header">
+        <button class="ghost" data-action="back-item" aria-label="Назад">←</button>
+        <div>
+          <span class="step">Результат</span>
+          <h2 id="result-item-name">Покупка</h2>
+        </div>
+      </header>
+
+      <div class="result-hero card">
+        <span class="result-label">Это стоит тебе</span>
+        <div class="result-number" id="result-hours">—</div>
+        <div class="result-unit">часов работы</div>
+      </div>
+
+      <div class="result-grid">
+        <article class="metric card">
+          <span>В рабочих днях</span>
+          <strong id="result-days">—</strong>
+        </article>
+        <article class="metric card">
+          <span>Доля месячного дохода</span>
+          <strong id="result-share">—</strong>
+        </article>
+        <article class="metric card wide">
+          <span>Твой личный курс</span>
+          <strong id="result-rate">—</strong>
+        </article>
+      </div>
+
+      <p class="result-note">Та же цена. Просто теперь она что-то значит.</p>
+
+      <div class="actions-stack">
+        <button class="primary" data-action="another-item">Посчитать что-нибудь ещё</button>
+        <button class="secondary" data-action="edit-profile">Изменить мой курс</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="data/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
