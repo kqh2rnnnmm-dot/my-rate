@@ -53,7 +53,7 @@
 
         <section class="surface list-surface">
           <div class="section-heading sticky-heading"><div><div class="kicker">Сейчас считаем</div><h3 id="currentTitle">Пока пусто</h3></div><button id="clearItems" class="text-button danger hidden" type="button">Очистить</button></div>
-          <div class="field-block result-wheel-block"><div class="label-row wheel-field-label centered"><span>Показать стоимость в…</span><button class="help-button" type="button" data-help="unit" aria-label="Подсказка: единицы результата">?</button></div><div class="wheel unit-wheel" data-wheel="unit" aria-label="Единицы результата"></div></div>
+          <div id="currentUnitPicker" class="field-block result-wheel-block hidden"><div class="label-row wheel-field-label centered"><span>Показать стоимость в…</span><button class="help-button" type="button" data-help="unit" aria-label="Подсказка: единицы результата">?</button></div><div class="wheel unit-wheel" data-wheel="unit" aria-label="Единицы результата"></div></div>
           <div id="itemsList" class="items-list"></div>
         </section>
         <section id="totalCard" class="surface total-card hidden"><div class="total-label">Всё вместе стоит тебе</div><div id="totalValue" class="total-number">—</div><div id="totalMoney" class="total-meta"></div></section>
@@ -107,7 +107,7 @@
   </main>
 
   <nav id="bottomNav" class="bottom-nav hidden" aria-label="Главные разделы"><button class="nav-button active" type="button" data-screen="Current"><span aria-hidden="true">◌</span><b>Хочу — могу?</b></button><button class="nav-button" type="button" data-screen="Favorites"><span aria-hidden="true">⌑</span><b>Избранное</b></button><button class="nav-button" type="button" data-screen="Projects"><span aria-hidden="true">▦</span><b>Большие планы</b></button></nav>
-  <div id="selectionHint" class="selection-hint hidden" aria-live="polite">Можно собрать выбранное в один большой план.</div>
+  <div id="selectionHint" class="selection-hint hidden" aria-live="polite">Выбери ещё хотя бы одну — и можно собрать большой план.</div>
   <div id="selectionBar" class="selection-bar hidden"><div><span id="selectionBarCount">Выбрано: 0</span><small>Карточки готовы объединиться</small></div><button id="combineSelected" class="button primary" type="button">Объединить выбранные</button></div>
   <div id="helpPopover" class="help-popover hidden" role="tooltip"></div>
   <div id="magicOverlay" class="magic-overlay hidden" aria-live="polite"><div class="magic-bubble"><div class="magic-dots" aria-hidden="true"><i></i><i></i><i></i></div><div id="magicText">Секунду. Цифры совещаются.</div></div></div>
