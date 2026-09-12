@@ -7,6 +7,10 @@
   --line: #ddd8ce;
   --soft: #e9e6df;
   --accent: #11110f;
+  --action: #3568f0;
+  --action-pressed: #2957d5;
+  --disabled-bg: #e5e3dd;
+  --disabled-ink: #99958d;
   --danger: #b72d22;
   --focus: #326ee8;
   --green: #2c7a55;
@@ -173,14 +177,23 @@ input.field-error:focus {
   border-radius: 16px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform .14s ease, opacity .14s ease, background .14s ease;
+  box-shadow: 0 8px 22px rgba(53,104,240,.18);
+  transition: transform .14s ease, color .14s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease;
 }
-.button:active { transform: scale(.985); }
-.button:disabled { opacity: .45; cursor: default; }
+.button:active:not(:disabled) { transform: scale(.985); }
 .button.wide { width: 100%; }
-.button.primary { background: var(--accent); color: #fff; }
-.button.secondary { background: var(--soft); color: var(--ink); }
-.bookmark-button { background: #fff; border: 2px solid var(--ink); color: var(--ink); }
+.button.primary { background: var(--action); color: #fff; }
+.button.primary:active:not(:disabled) { background: var(--action-pressed); }
+.button.secondary { border: 1.5px solid var(--ink); background: #fff; color: var(--ink); box-shadow: none; }
+.button.danger { border-color: rgba(183,45,34,.34); background: #fff8f6; color: var(--danger); box-shadow: none; }
+.bookmark-button { border: 0; }
+.button:disabled {
+  border: 1px solid #d7d3ca;
+  background: var(--disabled-bg);
+  color: var(--disabled-ink);
+  box-shadow: none;
+  cursor: default;
+}
 .bookmark-button span { display: inline-block; margin-right: 6px; font-size: 1.25em; transform: rotate(180deg); }
 .icon-button, .back-button, .dots-button, .text-button, .dialog-close {
   min-width: 44px;
@@ -196,8 +209,8 @@ input.field-error:focus {
 .settings-button { margin-top: 3px; }
 .back-button { background: rgba(255,255,255,.72); border: 1px solid rgba(17,17,15,.07); }
 .dots-button { font-size: 1rem; letter-spacing: .08em; }
-.text-button { color: var(--muted); }
-.text-button.danger, .danger { color: var(--danger); }
+.text-button { border: 1px solid rgba(17,17,15,.14); background: rgba(255,255,255,.78); color: var(--muted); }
+.text-button.danger, .danger { border-color: rgba(183,45,34,.22); background: rgba(255,248,246,.86); color: var(--danger); }
 .status-line { min-height: 18px; color: var(--muted); font-size: .8rem; text-align: center; }
 
 /* Compact three-row wheel. It is deliberately non-scrollable until a hold gesture is recognised. */
@@ -290,7 +303,6 @@ input.field-error:focus {
 .page-heading-row { align-items: flex-end; margin-bottom: 4px; }
 .page-heading-row .screen-title { margin-bottom: 0; }
 .toolbar { min-height: 48px; justify-content: flex-end; }
-.selection-count { margin-right: auto; color: var(--muted); font-size: .9rem; font-weight: 720; }
 .card-list { display: grid; gap: 11px; }
 .saved-card, .project-card, .archive-card { padding: 17px; border-color: rgba(17,17,15,.065); background: var(--surface); box-shadow: var(--shadow); cursor: pointer; }
 .saved-card, .saved-card *, .project-card, .project-card *, .archive-card, .archive-card * {
@@ -419,9 +431,8 @@ input.field-error:focus {
   display: grid;
   width: min(700px, calc(100% - 26px));
   padding: 10px;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
   transform: translateX(50%);
   border: 1px solid rgba(17,17,15,.08);
   border-radius: 21px;
@@ -430,10 +441,15 @@ input.field-error:focus {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-.selection-bar > div { display: grid; padding-left: 5px; }
+.selection-bar-copy { display: flex; padding: 0 5px; align-items: baseline; justify-content: space-between; gap: 10px; }
 .selection-bar span { font-weight: 830; }
 .selection-bar small { color: var(--muted); font-size: .68rem; }
+.selection-bar-actions { display: grid; grid-template-columns: minmax(94px,.7fr) minmax(0,1.7fr); gap: 8px; }
 .selection-bar .button { min-height: 44px; padding: 10px 13px; font-size: .78rem; }
+
+.keyboard-open .bottom-nav,
+.keyboard-open .selection-hint,
+.keyboard-open .selection-bar { display: none !important; }
 
 .help-popover {
   position: fixed;
@@ -496,8 +512,6 @@ input.field-error:focus {
   .surface { padding: 17px; border-radius: 25px; }
   .price-grid { grid-template-columns: minmax(0, 1fr) 132px; }
   .quantity-field { grid-column: 1 / -1; }
-  .selection-bar { grid-template-columns: 1fr; }
-  .selection-bar > div { display: none; }
   .selection-bar .button { width: 100%; }
 }
 
