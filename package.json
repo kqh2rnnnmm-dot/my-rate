@@ -2,7 +2,7 @@
   "name": "myrate-verification",
   "private": true,
   "scripts": {
-    "test": "node test-31.cjs"
+    "test": "node test-311.cjs"
   },
   "devDependencies": {
     "jsdom": "30.0.1"

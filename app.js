@@ -121,131 +121,57 @@ function runIntro(mode='launch') {
 }
 function setupIntroLifecycle(){const remember=()=>{introHiddenAt=Date.now()},resume=()=>{if(!introHiddenAt)return;const awayFor=Date.now()-introHiddenAt;introHiddenAt=0;if(awayFor>=C.introReturnAfterMs)runIntro('return')};document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();else resume()});window.addEventListener('pagehide',remember);window.addEventListener('pageshow',event=>{if(event.persisted)resume()})}
 function showHelp(btn){const box=$('helpPopover'),text=(C.help[btn.dataset.help]||'').replace('{privacy}',privacy());if(!text||(!box.classList.contains('hidden')&&box.dataset.for===btn.dataset.help)){closeHelp();return}box.textContent=text;box.dataset.for=btn.dataset.help;box.classList.remove('hidden');const r=btn.getBoundingClientRect(),w=Math.min(320,innerWidth-28);box.style.width=w+'px';box.style.left=Math.max(14,Math.min(innerWidth-w-14,r.right-w))+'px';box.style.top=Math.min(innerHeight-box.offsetHeight-14,r.bottom+8)+'px'}
-function tourActive(){return state.onboarding?.tourActive===true&&!state.onboarding?.tourCompleted;}
-function clearTour() {
-  clearTimeout(tourPositionTimer);
-  tourTarget?.classList.remove('tour-target');tourTarget=null;
-  tourShells.forEach(el=>el.classList.remove('tour-shell-raised'));tourShells=[];
-  $('tourLayer').classList.add('hidden');document.body.classList.remove('tour-active');tourPaintedStep='';
+
+/* Legacy guided hooks are inert; stories never mutate calculation data. */
+function tourActive(){return false;}
+function syncTour(){}
+function positionTour(){}
+function saveTour(){return false;}
+function resumeTour(){}
+const stories=[
+ {title:'Ценник умеет притворяться',text:'MyRate переводит стоимость вещей в твоё рабочее время. Сначала настроим ритм, потом примерим хотелку.',rows:[['Наушники','8 000 ₽'],['Это для тебя','10 часов работы']],note:'Пример: при 800 ₽ за рабочий час.'},
+ {title:'Настрой свою математику',text:'Укажи сумму, период и обычный рабочий график. Позже всё можно изменить через шестерёнку.',rows:[['Сумма','6 400 ₽'],['Период','Рабочий день'],['График','5 дней · 8 часов']],note:'Это пример. В приложении вводи свои значения.'},
+ {title:'На что запал глаз?',text:'Название, цена одной штуки, валюта и количество. Заполни всё — кнопка «Добавить» станет активной.',rows:[['На что запал глаз?','Наушники'],['Что на ценнике?','8 000 ₽'],['Количество','1']],note:'Количество нужно указать, даже если нужна одна штука.'},
+ {title:'Вот и фокус',text:'Задержи палец на барабане и двигай вверх-вниз, не отрывая. Отпусти — выбранная единица сохранится.',rows:[['Минуты работы','600'],['Часы работы','10'],['Рабочие дни','1,25']],note:'Быстрый свайп прокручивает страницу. Удержание включает барабан.'},
+ {title:'Чтобы не потерять',text:'Сохрани результат в «Избранное». Через три точки можно переименовать карточку или изменить её детали.',rows:[['Избранное','Наушники · 10 часов'],['Меню карточки','Переименовать'],['Меню карточки','Изменить детали']],note:'После сохранения текущая форма очищается.'},
+ {title:'У хотелки появилась компания',text:'В «Избранном» удерживай карточку, чтобы включить выбор. Коснись второй — появится «Объединить выбранные».',rows:[['✓ Наушники','10 часов'],['✓ Кроссовки','15 часов'],['Большой план','25 часов работы']],note:'Повторное нажатие снимает выбор. «Отмена» снимает весь выбор.'},
+ {title:'Теперь можно прицениться',text:'Шестерёнка — рабочий ритм и настройки. Лупа — поиск. Архив — то, что пока отложено. Эти истории всегда доступны в настройках и FAQ.',rows:[['Настройки','Рабочий ритм'],['Поиск','Карточки и планы'],['Архив','Отложенные хотелки']],note:'No doubt. Just PROBA.'}
+];
+let storyIndex=0,storyRelease=null,storyScroll=0;
+function paintStory(){
+ const s=stories[storyIndex],layer=$('storyLayer');
+ $('storyProgress').replaceChildren(...stories.map((_,i)=>{const el=document.createElement('span');el.className=i<=storyIndex?'seen':'';return el;}));
+ $('storyCount').textContent=(storyIndex+1)+' / '+stories.length;
+ $('storyTitle').textContent=s.title;$('storyText').textContent=s.text;$('storyNote').textContent=s.note;
+ $('storyExample').replaceChildren(...s.rows.map(([label,value])=>{const row=document.createElement('div'),a=document.createElement('span'),b=document.createElement('strong');a.textContent=label;b.textContent=value;row.append(a,b);return row;}));
+ $('storyPrevious').disabled=storyIndex===0;$('storyNext').textContent=storyIndex===stories.length-1?'Попробовать':'Дальше';
+ $('storyHint').textContent=storyIndex===0?'Листай, когда разобрался':'Свайп влево — дальше · вправо — назад';
+ layer.scrollTop=0;
 }
-function saveTour(step,extra={}) {
-  const next=clone(state);
-  next.onboarding={...next.onboarding,...extra,tourActive:true,tourCompleted:false,tourStep:step};
-  if(!commit(next))return false;
-  syncTour();return true;
+function openStories(){
+ if(storyRelease)return;
+ dismissKeyboard();closeHelp();storyScroll=scrollY;storyIndex=0;
+ $('storyLayer').classList.remove('hidden');document.body.classList.add('stories-open');
+ storyRelease=U.focusLayer($('storyLayer'),closeStories);paintStory();
 }
-function finishTour() {
-  const next=clone(state);
-  next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true,tourStep:'welcome'};
-  if(!commit(next))return;
-  clearTour();setupOpen=false;switchScreen('Current');renderProfileStage();
+function closeStories(){
+ if(!storyRelease)return;
+ $('storyLayer').classList.add('hidden');document.body.classList.remove('stories-open');
+ const release=storyRelease;storyRelease=null;release();scrollTo({top:storyScroll,behavior:'instant'});
 }
-function skipTour() {
-  const next=clone(state);
-  next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true};
-  if(!commit(next))return;
-  clearTour();
-  if(!Calc.isValidProfile(state.profile||{})){setupOpen=true;renderProfileStage();}
+function stepStory(delta){
+ const next=storyIndex+delta;
+ if(next>=stories.length){closeStories();return;}
+ if(next<0)return;storyIndex=next;paintStory();
 }
-function beginTour() {
-  const next=clone(state);
-  next.onboarding={...next.onboarding,tourActive:true,tourCompleted:false,tourStep:'rhythmAmount',firstCardId:null,secondCardId:null,projectId:null};
-  if(!commit(next))return;
-  selectionMode=false;selected.clear();items=[];setupOpen=true;profileReturn='Current';
-  if(state.profile)fillProfile(state.profile);
-  switchScreen('Current');renderProfileStage();renderCurrent();
-  requestAnimationFrame(()=>syncTour(true));
-}
-function tourDefinition() {
-  if(!tourActive())return null;
-  const step=state.onboarding.tourStep,copy=C.tour?.[step];
-  if(!copy)return null;
-  let selector='',next=null;
-  if(step==='rhythmAmount'){selector='#income';next=()=>saveTour('rhythmPeriod');}
-  if(step==='rhythmPeriod'){selector='#rhythmChoice';next=()=>saveTour('rhythmSchedule');}
-  if(step==='rhythmSchedule'){selector='#rhythmSchedule';next=()=>saveTour('rhythmSave');}
-  if(step==='rhythmSave')selector='#saveProfile';
-  if(step==='firstName'){selector='#itemName';next=()=>saveTour('firstDetails');}
-  if(step==='firstDetails'){selector='#wishDetails';next=()=>saveTour('firstAdd');}
-  if(step==='firstAdd'||step==='second')selector=step==='firstAdd'?'#addItem':'#wishForm';
-  if(step==='firstResult'){selector='#itemsList .item-card';next=()=>saveTour('saveFirst');}
-  if(step==='saveFirst'||step==='saveSecond')selector='#saveCalculation';
-  if(step==='firstSaved'){
-    selector=state.onboarding.firstCardId?'[data-id="'+state.onboarding.firstCardId+'"]':'#favoritesList .saved-card';
-    next=()=>{if(saveTour('second')){setupOpen=false;switchScreen('Current');renderProfileStage();}};
-  }
-  if(step==='selectFirst')selector=state.onboarding.firstCardId?'[data-id="'+state.onboarding.firstCardId+'"]':'#favoritesList .saved-card';
-  if(step==='selectSecond')selector=state.onboarding.secondCardId?'[data-id="'+state.onboarding.secondCardId+'"]':'#favoritesList .saved-card:not(.selected)';
-  if(step==='combine')selector='#combineSelected';
-  if(step==='planResult'){selector='#projectDetailView';next=()=>{if(saveTour('finish'))switchScreen('Current');};}
-  if(step==='finish'){selector='#quickProfile';next=finishTour;}
-  return {step,copy,selector,next};
-}
-function positionTour() {
-  if(!tourTarget||$('tourLayer').classList.contains('hidden'))return;
-  const viewport=window.visualViewport;
-  const viewTop=viewport?.offsetTop||0,viewLeft=viewport?.offsetLeft||0;
-  const viewHeight=viewport?.height||innerHeight,viewWidth=viewport?.width||innerWidth;
-  const viewBottom=viewTop+viewHeight,viewRight=viewLeft+viewWidth;
-  const source=tourTarget.getBoundingClientRect();
-  const pad=6;
-  const left=Math.max(viewLeft+8,Math.min(viewRight-32,source.left-pad));
-  const top=Math.max(viewTop+8,Math.min(viewBottom-32,source.top-pad));
-  const right=Math.max(left+24,Math.min(viewRight-8,source.right+pad));
-  const bottom=Math.max(top+24,Math.min(viewBottom-8,source.bottom+pad));
-  const spot=$('tourSpotlight');
-  spot.style.left=left+'px';spot.style.top=top+'px';
-  spot.style.width=Math.max(24,right-left)+'px';spot.style.height=Math.max(24,bottom-top)+'px';
-  const coach=$('tourCoach'),coachWidth=Math.min(390,viewWidth-28);
-  coach.style.width=coachWidth+'px';
-  const coachHeight=Math.min(coach.scrollHeight||260,Math.min(viewHeight*.46,360));
-  const below=bottom+14,above=top-coachHeight-14;
-  let coachTop;
-  if(viewBottom-below>=coachHeight)coachTop=below;
-  else if(above>=viewTop+12)coachTop=above;
-  else coachTop=Math.max(viewTop+12,viewBottom-coachHeight-12);
-  const center=(source.left+source.right)/2;
-  coach.style.left=Math.max(viewLeft+12,Math.min(viewRight-coachWidth-12,center-coachWidth/2))+'px';
-  coach.style.top=coachTop+'px';
-}
-function syncTour(forceScroll=false) {
-  const def=tourDefinition();
-  if(!def||introActive){if(!def)clearTour();return;}
-  const target=document.querySelector(def.selector);
-  if(!target||target.closest('.hidden')||target.closest('.screen:not(.active)')){$('tourLayer').classList.add('hidden');return;}
-  tourTarget?.classList.remove('tour-target');
-  tourShells.forEach(el=>el.classList.remove('tour-shell-raised'));tourShells=[];
-  tourTarget=target;target.classList.add('tour-target');document.body.classList.add('tour-active');
-  const shell=target.closest('#bottomNav, #selectionBar, .dialog-layer');
-  if(shell){shell.classList.add('tour-shell-raised');tourShells.push(shell);}
-  $('tourProgress').textContent=def.copy.progress;
-  $('tourTitle').textContent=def.copy.title;$('tourText').textContent=def.copy.text;
-  const next=$('tourNext');next.classList.toggle('hidden',!def.copy.action);
-  next.textContent=def.copy.action||'';next.onclick=def.next||null;
-  if(def.step==='rhythmAmount')next.disabled=!validNumber($('income'));
-  else if(def.step==='rhythmSchedule')next.disabled=![$('days'),$('hours')].every(validNumber);
-  else if(def.step==='firstName')next.disabled=!$('itemName').value.trim();
-  else if(def.step==='firstDetails')next.disabled=![$('itemPrice'),$('itemQty')].every(validNumber);
-  else next.disabled=false;
-  $('tourLayer').classList.remove('hidden');
-  const changed=tourPaintedStep!==def.step;tourPaintedStep=def.step;
-  if(changed||forceScroll)target.scrollIntoView?.({block:'center',inline:'nearest',behavior:'smooth'});
-  clearTimeout(tourPositionTimer);tourPositionTimer=setTimeout(positionTour,changed?320:20);
-}
-function resumeTour() {
-  if(!tourActive())return;
-  let step=state.onboarding.tourStep;
-  if(['firstResult','saveFirst'].includes(step)&&!items.length)step='firstName';
-  if(step==='saveSecond'&&!items.length)step='second';
-  if(step!==state.onboarding.tourStep){saveTour(step);return;}
-  if(['rhythmAmount','rhythmPeriod','rhythmSchedule','rhythmSave'].includes(step)){setupOpen=true;switchScreen('Current');renderProfileStage();}
-  else if(['firstName','firstDetails','firstAdd','firstResult','saveFirst','second','saveSecond','finish'].includes(step)){setupOpen=false;switchScreen('Current');renderProfileStage();}
-  else if(['firstSaved','selectFirst','selectSecond','combine'].includes(step))switchScreen('Favorites');
-  else if(step==='planResult'){
-    switchScreen('Projects');
-    if(state.onboarding.projectId&&find(state.projects,state.onboarding.projectId))openProject(state.onboarding.projectId);
-  }
-  requestAnimationFrame(()=>syncTour(true));
+function setupStories(){
+ $('skipTourIntro').onclick=openStories;$('restartTour').onclick=openStories;$('faqStories').onclick=openStories;
+ $('storyClose').onclick=closeStories;$('storyNext').onclick=()=>stepStory(1);$('storyPrevious').onclick=()=>stepStory(-1);
+ const layer=$('storyLayer');let start=null;
+ layer.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;},{passive:true});
+ layer.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5)stepStory(dx<0?1:-1);},{passive:true});
+ layer.addEventListener('touchcancel',()=>{start=null;},{passive:true});
+ layer.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();stepStory(e.key==='ArrowRight'?1:-1);}});
 }
 function dialog({title,text='',body=null,actions=[{label:'Понятно',value:true,primary:true}]}) {
   closeSheet();
@@ -460,7 +386,7 @@ async function saveCalculation() {
 function date(v){return new Date(v).toLocaleDateString('ru-RU')}
 function empty(title,text){return `<div class="empty-state"><strong>${title}</strong>${text}</div>`}
 function bindLongPress(card,id){U.hold(card,e=>{if(e.target.closest('.dots-button'))actionCalculation(find(state.calculations,id));else enterSelection(id);});}
-function renderFavorites(){const list=K.sorted(activeCalcs(),state.sort.calculations),box=$('favoritesList');$('clearFavorites').classList.toggle('hidden',!list.length||selectionMode);box.classList.toggle('selection-mode',selectionMode);box.innerHTML='';if(!list.length){box.innerHTML=empty('Здесь пока ничего не припрятано.','Добавь карточку через «Хочу — могу?», и она появится здесь.');updateSelection();return}list.forEach(c=>{const s=Calc.calculationSummary(c),u=c.displayUnit||'hours',card=document.createElement('article');card.className='saved-card'+(selected.has(c.id)?' selected':selectionMode?' selection-muted':'');card.dataset.id=c.id;card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(c.createdAt)} · ${c.items.length} поз.</div><div class="saved-summary">${Calc.smart(Calc.unitValue(s.hours,u,c.profile),u)}</div></div><button class="dots-button" type="button" aria-label="Действия">•••</button><div class="selection-mark">${selected.has(c.id)?'✓':''}</div></div>`;card.querySelector('.saved-title').textContent=c.title;card.onclick=e=>{if(card.dataset.held){delete card.dataset.held;return}if(e.target.closest('.dots-button'))return actionCalculation(c);selectionMode?toggleSelected(c.id):openFavorite(c.id)};bindLongPress(card,c.id);box.append(card)});updateSelection()}
+function renderFavorites(){const list=K.sorted(activeCalcs(),state.sort.calculations),box=$('favoritesList');$('clearFavorites').classList.toggle('hidden',!list.length||selectionMode);box.classList.toggle('selection-mode',selectionMode);box.innerHTML='';if(!list.length){box.innerHTML=empty('Здесь пока ничего не припрятано.','Добавь карточку через «Хочу — могу?», и она появится здесь.');updateSelection();return}list.forEach(c=>{const s=Calc.calculationSummary(c),u=c.displayUnit||'hours',card=document.createElement('article');card.className='saved-card'+(selected.has(c.id)?' selected':selectionMode?' selection-muted':'');card.dataset.id=c.id;card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(c.createdAt)} · ${c.items.length} поз.</div><div class="saved-summary">${Calc.smart(Calc.unitValue(s.hours,u,c.profile),u)}</div></div><button class="dots-button" type="button" aria-label="Действия">${U.icon("more")}</button><div class="selection-mark">${selected.has(c.id)?'✓':''}</div></div>`;card.querySelector('.saved-title').textContent=c.title;card.onclick=e=>{if(card.dataset.held){delete card.dataset.held;return}if(e.target.closest('.dots-button'))return actionCalculation(c);selectionMode?toggleSelected(c.id):openFavorite(c.id)};bindLongPress(card,c.id);box.append(card)});updateSelection()}
 function tourSelectionChanged(){
   if(!tourActive())return;
   const step=state.onboarding.tourStep;
@@ -543,7 +469,7 @@ async function combine(){
   if(guided){switchScreen('Projects');openProject(project.id);requestAnimationFrame(()=>syncTour(true));}
 }
 async function addOneToProject(c){const projects=activeProjects();if(!projects.length)return toast('Сначала собери большой план минимум из двух карточек.');sheet('Выбери большой план',projects.map(p=>({label:p.title,run:()=>{if(p.calculations.some(x=>x.sourceId===c.id))return toast('Эта карточка уже есть в выбранном плане.');p.calculations.push({...clone(c),id:S.uid('pc'),sourceId:c.id});p.updatedAt=stamp();if(!save())return;renderAll();toast('Карточка добавлена в «Большой план».')}})))}
-function renderProjects(){const list=K.sorted(activeProjects(),state.sort.projects,true),box=$('projectsList');$('clearProjects').classList.toggle('hidden',!list.length);box.innerHTML='';if(!list.length){box.innerHTML=empty('Больших планов пока нет.','Выбери минимум две карточки в «Избранном» или собери план прямо из текущих хотелок.');return}list.forEach(p=>{const s=Calc.projectSummary(p),first=p.calculations[0]?.profile||state.profile,u=p.displayUnit||'hours',card=document.createElement('article');card.className='project-card';card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(p.createdAt)} · ${p.calculations.length} карточек</div><div class="saved-summary">${first?Calc.smart(projectTime(p,u),u):'—'}</div></div><button class="dots-button" type="button">•••</button></div>`;card.querySelector('.saved-title').textContent=p.title;card.onclick=e=>e.target.closest('.dots-button')?actionProject(p):openProject(p.id);box.append(card)})}
+function renderProjects(){const list=K.sorted(activeProjects(),state.sort.projects,true),box=$('projectsList');$('clearProjects').classList.toggle('hidden',!list.length);box.innerHTML='';if(!list.length){box.innerHTML=empty('Больших планов пока нет.','Выбери минимум две карточки в «Избранном» или собери план прямо из текущих хотелок.');return}list.forEach(p=>{const s=Calc.projectSummary(p),first=p.calculations[0]?.profile||state.profile,u=p.displayUnit||'hours',card=document.createElement('article');card.className='project-card';card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(p.createdAt)} · ${p.calculations.length} карточек</div><div class="saved-summary">${first?Calc.smart(projectTime(p,u),u):'—'}</div></div><button class="dots-button" type="button">${U.icon("more")}</button></div>`;card.querySelector('.saved-title').textContent=p.title;card.onclick=e=>e.target.closest('.dots-button')?actionProject(p):openProject(p.id);box.append(card)})}
 function openProject(id,origin='Projects') {
   const p=find(state.projects,id);if(!p)return;
   projectOrigin=origin;openedProject=id;$('projectsListView').classList.add('hidden');$('projectDetailView').classList.remove('hidden');
@@ -598,7 +524,7 @@ function archiveProject(p){p.status='archived';p.archivedAt=stamp();if(!save())r
 async function deleteProject(p){if(!await confirm('Удалить большой план?','План и его собственные позиции исчезнут. Карточки, которые отдельно сохранены в «Избранном», останутся там.','Удалить'))return;state.projects=state.projects.filter(x=>x.id!==p.id);if(!save())return;if(openedProject)closeProject();renderAll();toast(null,'deleted')}
 function actionProject(p){sheet(p.title,[{label:'Открыть',run:()=>openProject(p.id)},{label:'Переименовать',run:()=>renameProject(p)},{label:'Пересобрать план',run:()=>rebuildProject(p)},{label:'Пересчитать по текущему ритму',run:()=>recalcProject(p)},{label:'Обновить курсы плана',run:()=>updateProjectFx(p)},{label:'Переместить в Архив',run:()=>archiveProject(p)},{label:'Удалить',danger:true,run:()=>deleteProject(p)}])}
 
-function renderArchive(){document.querySelectorAll('[data-archive-tab]').forEach(b=>b.classList.toggle('active',b.dataset.archiveTab===archiveTab));const box=$('archiveList'),list=archiveTab==='calculations'?state.calculations.filter(x=>x.status==='archived'):state.projects.filter(x=>x.status==='archived');box.innerHTML='';if(!list.length){box.innerHTML=empty('В Архиве пока пусто.','Здесь будут отдыхать карточки и планы, которые ты решил не удалять.');return}list.forEach(x=>{const card=document.createElement('article');card.className='archive-card';card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">В Архиве с ${date(x.archivedAt||x.updatedAt)}</div></div><button class="dots-button" type="button">•••</button></div>`;card.querySelector('.saved-title').textContent=x.title;card.onclick=e=>{if(e.target.closest('.dots-button'))return archiveActions(x,archiveTab);switchScreen(archiveTab==='calculations'?'Favorites':'Projects');archiveTab==='calculations'?openFavorite(x.id,'Archive'):openProject(x.id,'Archive');};U.hold(card,()=>archiveActions(x,archiveTab));box.append(card)})}
+function renderArchive(){document.querySelectorAll('[data-archive-tab]').forEach(b=>b.classList.toggle('active',b.dataset.archiveTab===archiveTab));const box=$('archiveList'),list=archiveTab==='calculations'?state.calculations.filter(x=>x.status==='archived'):state.projects.filter(x=>x.status==='archived');box.innerHTML='';if(!list.length){box.innerHTML=empty('В Архиве пока пусто.','Здесь будут отдыхать карточки и планы, которые ты решил не удалять.');return}list.forEach(x=>{const card=document.createElement('article');card.className='archive-card';card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">В Архиве с ${date(x.archivedAt||x.updatedAt)}</div></div><button class="dots-button" type="button">${U.icon("more")}</button></div>`;card.querySelector('.saved-title').textContent=x.title;card.onclick=e=>{if(e.target.closest('.dots-button'))return archiveActions(x,archiveTab);switchScreen(archiveTab==='calculations'?'Favorites':'Projects');archiveTab==='calculations'?openFavorite(x.id,'Archive'):openProject(x.id,'Archive');};U.hold(card,()=>archiveActions(x,archiveTab));box.append(card)})}
 function archiveActions(x,type) {
   const isCalc=type==='calculations';
   sheet(x.title,[
@@ -790,14 +716,14 @@ function sectionMenu(name) {
 function openSearch() {
   if(searchRelease)return;
   closeSheet();closeHelp();searchScroll=window.scrollY;
-  const layer=$('searchLayer');layer.classList.remove('hidden');
+  const layer=$('searchLayer');layer.classList.remove('hidden');document.body.classList.add('search-open');
   searchRelease=U.focusLayer(layer,closeSearch);
   $('searchPrivacy').textContent='Ищем в «Избранном», Больших планах и Архиве. Только на '+(/iPhone/i.test(navigator.userAgent)?'этом iPhone.':'этом устройстве.');
   renderSearch();$('searchInput').focus({preventScroll:true});
 }
 function closeSearch() {
   if(!searchRelease)return;
-  dismissKeyboard();$('searchLayer').classList.add('hidden');
+  dismissKeyboard();$('searchLayer').classList.add('hidden');document.body.classList.remove('search-open');
   const release=searchRelease;searchRelease=null;release();scrollTo({top:searchScroll,behavior:'instant'});
 }
 function renderSearch() {
@@ -821,22 +747,11 @@ function renderSearch() {
 function setupExperience() {
   U.icons();
   document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea,select'))e.preventDefault();});
-  $('startSetup').onclick=()=>state.onboarding.tourCompleted
-    ?(setupOpen=true,renderProfileStage(),scrollTo({top:0}))
-    :beginTour();
-  $('skipTourIntro').onclick=()=>{
-    const next=clone(state);next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true};
-    if(!commit(next))return;setupOpen=true;renderProfileStage();scrollTo({top:0});
-  };
-  $('tourSkip').onclick=skipTour;
+  $('startSetup').onclick=()=>{setupOpen=true;renderProfileStage();scrollTo({top:0});};
+  setupStories();
   $('quickProfile').onclick=()=>editProfileFrom('Current');
   $('profileBack').onclick=()=>{setupOpen=false;fillProfile(state.profile);renderProfileStage();switchScreen(profileReturn);};
   $('editProfile').onclick=()=>editProfileFrom('Settings');
-  $('restartTour').onclick=async()=>{
-    const detail=items.length?' Текущий несохранённый список будет очищен.':'';
-    if(!await confirm('Пройти знакомство заново?','Ты создашь две настоящие карточки и один Большой план. Всё уже сохранённое останется на месте.'+detail,'Начать знакомство'))return;
-    beginTour();
-  };
   document.querySelectorAll('[data-section-menu]').forEach(b=>b.onclick=()=>sectionMenu(b.dataset.sectionMenu));
   $('searchButton').onclick=openSearch;$('closeSearch').onclick=closeSearch;
   $('searchInput').oninput=renderSearch;
@@ -894,4 +809,29 @@ setupIntroLifecycle();
 runIntro('launch');
 window.MyRateReady=true;
 if(S.warning)setTimeout(()=>toast(S.warning),6500);
+
+/* A single gentle hint after content changes; any user interaction cancels it. */
+function setupScrollHints(){
+ let timer=0,lastScreen='',shown=false;
+ const cancel=()=>{clearTimeout(timer);document.querySelector('.scroll-hint')?.classList.remove('scroll-hint');};
+ const schedule=()=>{
+  cancel();const screen=document.querySelector('.screen.active');if(!screen)return;
+  if(lastScreen!==screen.id){lastScreen=screen.id;shown=false;}
+  if(shown)return;
+  timer=setTimeout(()=>{
+   if(document.hidden||introActive||storyRelease||searchRelease||document.body.classList.contains('modal-open')||document.body.classList.contains('keyboard-open')||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+   if(screen.getBoundingClientRect().bottom<=innerHeight+48)return;
+   shown=true;screen.classList.add('scroll-hint');
+   setTimeout(()=>screen.classList.remove('scroll-hint'),850);
+  },2200);
+ };
+ ['touchstart','pointerdown','wheel','keydown'].forEach(name=>document.addEventListener(name,cancel,{passive:true}));
+ addEventListener('scroll',()=>{shown=true;cancel();},{passive:true});
+ const observer=new MutationObserver(schedule);
+ document.querySelectorAll('.screen').forEach(el=>observer.observe(el,{childList:true,subtree:true,characterData:true}));
+ const screens=new MutationObserver(records=>{if(records.some(r=>(r.oldValue||'').split(' ').includes('active')!==r.target.classList.contains('active')))schedule();});
+ document.querySelectorAll('.screen').forEach(el=>screens.observe(el,{attributes:true,attributeOldValue:true,attributeFilter:['class']}));
+ schedule();
+}
+setupScrollHints();
 })();

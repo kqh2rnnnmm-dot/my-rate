@@ -19,7 +19,7 @@
   <meta name="description" content="My Rate переводит стоимость вещей и планов в твоё рабочее время.">
   <title>My Rate — сколько будет стоить для меня?</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111111'/%3E%3Cpath d='M16 43V21h7l9 12 9-12h7v22h-8V33l-8 10-8-10v10z' fill='white'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=3.1.0">
+  <link rel="stylesheet" href="styles.css?v=3.1.1">
 </head>
 <body>
   <div id="introScreen" class="intro-screen hidden" aria-live="polite" aria-label="My Rate. Сколько будет стоить для меня? A PROBA experience. No doubt. Just PROBA.">
@@ -40,9 +40,9 @@
       <section id="welcome" class="surface welcome-panel">
         <div class="kicker">Знакомимся с MyRate</div>
         <h3>Ценник умеет притворяться</h3>
-        <p>MyRate переводит стоимость вещей в твоё рабочее время. Минуты, часы, дни или месяцы — посмотрим, что на самом деле спряталось за ценником.</p>
+        <p>MyRate переводит стоимость вещей в твоё рабочее время. Настрой свой ритм — и посмотрим, что скрывается за ценником. Инструкция «Как это работает?» покажет всё на примерах.</p>
         <button id="startSetup" class="button primary wide" type="button">Настроить свою математику</button>
-        <button id="skipTourIntro" class="button secondary wide welcome-skip" type="button">Настроить без знакомства</button>
+        <button id="skipTourIntro" class="button secondary wide welcome-skip" type="button">Как это работает?</button>
       </section>
       <button id="quickProfile" class="button secondary rhythm-link hidden" type="button"><span data-icon="gear"></span>Подкрутить мой ритм</button>
       <section id="profileEditor" class="surface compact-form hidden">
@@ -117,7 +117,7 @@
       <div class="detail-toolbar top-detail-toolbar"><button id="settingsBack" class="back-button" type="button">← Назад</button></div><div class="kicker">Тихая комната с рычагами</div><h2 id="settingsHeading" class="screen-title">Настройки</h2>
       <section class="surface settings-list">
         <button id="editProfile" class="settings-row" type="button"><span><strong>Подкрутить мой рабочий ритм</strong><small>Сумма, период и рабочий график</small></span><span>›</span></button>
-        <button id="restartTour" class="settings-row" type="button"><span><strong>Пройти знакомство заново</strong><small>Две карточки и один Большой план — вместе</small></span><span>›</span></button>
+        <button id="restartTour" class="settings-row" type="button"><span><strong>Пройти знакомство заново</strong><small>Семь коротких историй с примерами</small></span><span>›</span></button>
         <label class="settings-row toggle-row"><span><strong>Магия пересчёта</strong><small>Пауза, движение и мягкое появление</small></span><input id="magicToggle" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
         <label class="settings-row toggle-row"><span><strong>Шутки и реплики</strong><small>Чтобы цифры не становились слишком важными</small></span><input id="jokesToggle" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
         <button id="updateAllFx" class="settings-row" type="button"><span><strong>Обновить курсы во всём приложении</strong><small>Только после подтверждения</small></span><span>›</span></button>
@@ -127,7 +127,7 @@
     </section>
 
     <section id="screenFaq" class="screen" aria-labelledby="faqHeading">
-      <div class="detail-toolbar top-detail-toolbar"><button id="faqBack" class="back-button" type="button">← Назад</button></div><div class="kicker">Ответы без бюрократии</div><h2 id="faqHeading" class="screen-title">Что за магия?</h2><div id="faqContent" class="faq-list"></div>
+      <div class="detail-toolbar top-detail-toolbar"><button id="faqBack" class="back-button" type="button">← Назад</button></div><div class="kicker">Ответы без бюрократии</div><h2 id="faqHeading" class="screen-title">Что за магия?</h2><button id="faqStories" class="button secondary wide" type="button">Как это работает?</button><div id="faqContent" class="faq-list"></div>
       <footer class="proba-footer"><div>A PROBA experience</div><strong>No doubt. Just <span>PROBA.</span></strong></footer>
     </section>
 
@@ -164,17 +164,18 @@
   <div id="helpPopover" class="help-popover hidden" role="tooltip"></div>
   <div id="magicOverlay" class="magic-overlay hidden" aria-live="polite"><div class="magic-bubble"><div class="magic-dots" aria-hidden="true"><i></i><i></i><i></i></div><div id="magicText">Секунду. Цифры совещаются.</div></div></div>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-  <div id="tourLayer" class="tour-layer hidden" aria-live="polite">
-    <div id="tourSpotlight" class="tour-spotlight" aria-hidden="true"></div>
-    <section id="tourCoach" class="tour-coach" role="dialog" aria-labelledby="tourTitle" aria-describedby="tourText">
-      <div class="tour-topline"><span id="tourProgress"></span><button id="tourSkip" type="button">Пропустить знакомство</button></div>
-      <h3 id="tourTitle"></h3>
-      <p id="tourText"></p>
-      <button id="tourNext" class="button primary wide hidden" type="button"></button>
+  <div id="storyLayer" class="story-layer hidden" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
+    <section class="story-panel">
+      <div id="storyProgress" class="story-progress" aria-hidden="true"></div>
+      <div class="story-top"><span id="storyCount"></span><span>Как это работает?</span><button id="storyClose" class="icon-button" aria-label="Закрыть инструкцию" type="button">×</button></div>
+      <div class="story-copy" aria-live="polite"><h2 id="storyTitle"></h2><p id="storyText"></p></div>
+      <div class="story-demo"><div class="kicker">Демонстрационный пример</div><div id="storyExample"></div><p id="storyNote"></p></div>
+      <p id="storyHint"></p>
+      <div class="story-actions"><button id="storyPrevious" class="button secondary" type="button">Назад</button><button id="storyNext" class="button primary" type="button">Дальше</button></div>
     </section>
   </div>
   <div id="dialogLayer" class="dialog-layer hidden" role="presentation"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><button id="dialogClose" class="dialog-close" type="button" aria-label="Закрыть">×</button><h3 id="dialogTitle"></h3><div id="dialogText" class="dialog-text"></div><div id="dialogBody"></div><div id="dialogActions" class="dialog-actions"></div></section></div>
-  <div id="sheetLayer" class="sheet-layer hidden" role="presentation"><section class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-handle" aria-hidden="true"></div><h3 id="sheetTitle"></h3><div id="sheetActions" class="sheet-actions"></div><button id="sheetCancel" class="sheet-cancel" type="button">Отмена</button></section></div>
-  <script src="config.js?v=3.1.0"></script><script src="storage.js?v=3.1.0"></script><script src="calculator.js?v=3.1.0"></script><script src="collections.js?v=3.1.0"></script><script src="interface.js?v=3.1.0"></script><script src="app.js?v=3.1.0"></script>
+  <div id="sheetLayer" class="sheet-layer hidden" role="presentation"><section class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><h3 id="sheetTitle"></h3><div id="sheetActions" class="sheet-actions"></div><button id="sheetCancel" class="sheet-cancel" type="button">Отмена</button></section></div>
+  <script src="config.js?v=3.1.1"></script><script src="storage.js?v=3.1.1"></script><script src="calculator.js?v=3.1.1"></script><script src="collections.js?v=3.1.1"></script><script src="interface.js?v=3.1.1"></script><script src="app.js?v=3.1.1"></script>
 </body>
 </html>
