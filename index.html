@@ -5,17 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f2f0ea">
   <script>
-    (() => {
-      try {
-        const saved = JSON.parse(localStorage.getItem('myrate_state_v2') || 'null');
-        if (!saved?.introSeen) {
-          document.documentElement.classList.add('intro-pending');
-          document.querySelector('meta[name="theme-color"]').content = '#10100f';
-        }
-      } catch {
-        document.documentElement.classList.add('intro-pending');
-      }
-    })();
+    document.documentElement.classList.add('intro-pending');
+    document.querySelector('meta[name="theme-color"]').content = '#10100f';
   </script>
   <meta name="description" content="My Rate переводит стоимость вещей и планов в твоё рабочее время.">
   <title>My Rate — сколько будет стоить для меня?</title>
