@@ -91,6 +91,7 @@ window.MyRateStorage = (() => {
       calculations: [],
       projects: [],
       settings: { magic: true, jokes: true },
+      introSeen: false,
       migratedAt: null
     };
   }
@@ -103,6 +104,7 @@ window.MyRateStorage = (() => {
     state.projects = (Array.isArray(source?.projects) ? source.projects : []).map((item) => normalizeProject(item, state.profile, state.fx));
     state.settings.magic = source?.settings?.magic !== false;
     state.settings.jokes = source?.settings?.jokes !== false;
+    state.introSeen = source?.introSeen === true;
     state.migratedAt = source?.migratedAt || null;
     return state;
   }

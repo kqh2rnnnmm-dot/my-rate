@@ -1,6 +1,6 @@
 window.MyRateConfig = Object.freeze({
   appName: 'My Rate',
-  version: '2.5.0',
+  version: '2.6.0',
   weeksPerYear: 52,
   monthsPerYear: 12,
   wheelHoldMs: 280,
@@ -10,6 +10,10 @@ window.MyRateConfig = Object.freeze({
   magicMaxMs: 2200,
   magicFxMaxMs: 2800,
   magicFadeMs: 360,
+  introHoldMs: 5000,
+  introExitMs: 1050,
+  introSkipDelayMs: 850,
+  introBrandMs: 3600,
   toastMinMs: 4000,
   toastMaxMs: 6000,
   fxMaxAgeMs: 24 * 60 * 60 * 1000,
