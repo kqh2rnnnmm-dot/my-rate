@@ -1,6 +1,6 @@
 window.MyRateConfig = Object.freeze({
   appName: 'My Rate',
-  version: '2.7.0',
+  version: '3.0.0',
   weeksPerYear: 52,
   monthsPerYear: 12,
   wheelHoldMs: 280,
@@ -63,6 +63,9 @@ window.MyRateConfig = Object.freeze({
     unit: 'Выбери, во что перевести ценник: минуты, часы, рабочие дни, недели, месяцы или годы.'
   },
   copy: {
+    currentEdited: ['Готово. Хотелка обновила показания.', 'Поправили. Цифры не спорили.', 'Теперь похоже на правду.'],
+    currentCopied: ['Копия готова. Теперь их двое.'],
+    currentRemoved: ['Убрали из прикидки. Без драм.'],
     neutral: [
       'Считаем…',
       'Пересчитываем…',

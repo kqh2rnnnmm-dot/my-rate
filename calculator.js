@@ -7,6 +7,7 @@ window.MyRateCalculator = (() => {
   }
 
   function normalizeProfile(source = {}) {
+    source = source || {};
     const currencyMap = { '₽': 'RUB', '$': 'USD', '€': 'EUR', '₪': 'ILS', '£': 'GBP' };
     return {
       income: finite(source.income),

@@ -1,5 +1,7 @@
 window.MyRateStorage = (() => {
   const KEY = 'myrate_state_v2';
+  const BACKUP_KEY = 'myrate_backup_before_3';
+  let warning = '', writable = true;
   const LEGACY = {
     profile: ['myrate_profile_v011', 'myRate.profile.v1'],
     fx: ['myrate_fx_v011'],
@@ -77,7 +79,7 @@ window.MyRateStorage = (() => {
       displayUnit: source?.displayUnit || 'hours',
       calculations: (Array.isArray(source?.calculations) ? source.calculations : []).map((calculation) => {
         const normalized = normalizeCalculation(calculation, fallbackProfile, fallbackFx);
-        normalized.sourceId = normalized.sourceId || calculation?.id || null;
+        if (!Object.hasOwn(calculation || {}, 'sourceId')) normalized.sourceId = calculation?.id || null;
         return normalized;
       })
     };
@@ -85,12 +87,14 @@ window.MyRateStorage = (() => {
 
   function blankState() {
     return {
-      schema: 2,
+      schema: 3,
       profile: null,
       fx: null,
       calculations: [],
       projects: [],
       settings: { magic: true, jokes: true },
+      onboarding: { wheelLearned: false },
+      sort: { calculations: 'new', projects: 'new' },
       migratedAt: null
     };
   }
@@ -103,6 +107,11 @@ window.MyRateStorage = (() => {
     state.projects = (Array.isArray(source?.projects) ? source.projects : []).map((item) => normalizeProject(item, state.profile, state.fx));
     state.settings.magic = source?.settings?.magic !== false;
     state.settings.jokes = source?.settings?.jokes !== false;
+    state.onboarding.wheelLearned = source?.onboarding?.wheelLearned === true;
+    for (const type of ['calculations', 'projects']) {
+      const order = source?.sort?.[type];
+      if (['new', 'old', 'name', 'timeAsc', 'timeDesc'].includes(order)) state.sort[type] = order;
+    }
     state.migratedAt = source?.migratedAt || null;
     return state;
   }
@@ -137,11 +146,27 @@ window.MyRateStorage = (() => {
   }
 
   function load() {
-    const current = parse(localStorage.getItem(KEY), null);
-    return current ? normalizeState(current) : migrateLegacy();
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return migrateLegacy();
+      const current = JSON.parse(raw);
+      if (!current || !Array.isArray(current.calculations) || !Array.isArray(current.projects)) throw new Error('Invalid saved state');
+      if ((current.schema || 2) < 3 && !localStorage.getItem(BACKUP_KEY)) {
+        // Keep the exact pre-upgrade bytes before the first 3.0 write.
+        localStorage.setItem(BACKUP_KEY, raw);
+      }
+      return normalizeState(current);
+    } catch {
+      writable = false;
+      warning = 'Не удалось безопасно прочитать данные или сохранить резервную копию. Старые данные не перезаписаны. Освободи место на устройстве и открой MyRate снова.';
+      // If just the backup failed, existing readable data remains available.
+      try { return normalizeState(JSON.parse(localStorage.getItem(KEY))); }
+      catch { return blankState(); }
+    }
   }
 
   function save(state) {
+    if (!writable) return false;
     try {
       localStorage.setItem(KEY, JSON.stringify(normalizeState(state)));
       return true;
@@ -154,5 +179,5 @@ window.MyRateStorage = (() => {
     localStorage.removeItem(KEY);
   }
 
-  return { KEY, load, save, clearAll, normalizeProfile, normalizeCalculation, normalizeProject, clone, uid };
+  return { KEY, BACKUP_KEY, get warning() { return warning; }, load, save, clearAll, normalizeProfile, normalizeCalculation, normalizeProject, clone, uid };
 })();

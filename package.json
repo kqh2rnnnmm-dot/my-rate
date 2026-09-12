@@ -1,5 +1,13 @@
 {
-  "dependencies": {
-    "jsdom": "^30.0.1"
+  "name": "myrate-verification",
+  "private": true,
+  "scripts": {
+    "test": "node test-3.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.0.1"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }
