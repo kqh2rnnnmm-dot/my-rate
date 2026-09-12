@@ -93,7 +93,15 @@ window.MyRateStorage = (() => {
       calculations: [],
       projects: [],
       settings: { magic: true, jokes: true },
-      onboarding: { wheelLearned: false },
+      onboarding: {
+        wheelLearned: false,
+        tourCompleted: false,
+        tourActive: false,
+        tourStep: 'welcome',
+        firstCardId: null,
+        secondCardId: null,
+        projectId: null
+      },
       sort: { calculations: 'new', projects: 'new' },
       migratedAt: null
     };
@@ -108,6 +116,26 @@ window.MyRateStorage = (() => {
     state.settings.magic = source?.settings?.magic !== false;
     state.settings.jokes = source?.settings?.jokes !== false;
     state.onboarding.wheelLearned = source?.onboarding?.wheelLearned === true;
+    const hadLifeBeforeTour = Boolean(source?.profile) ||
+      state.calculations.length > 0 || state.projects.length > 0;
+    const hasTourFlag = typeof source?.onboarding?.tourCompleted === 'boolean';
+    state.onboarding.tourCompleted = hasTourFlag
+      ? source.onboarding.tourCompleted
+      : hadLifeBeforeTour;
+    state.onboarding.tourActive = source?.onboarding?.tourActive === true &&
+      !state.onboarding.tourCompleted;
+    const allowedTourSteps = [
+      'welcome', 'rhythmAmount', 'rhythmPeriod', 'rhythmSchedule', 'rhythmSave',
+      'firstName', 'firstDetails', 'firstAdd', 'firstResult', 'saveFirst', 'firstSaved',
+      'second', 'saveSecond', 'selectFirst', 'selectSecond', 'combine',
+      'planResult', 'finish'
+    ];
+    state.onboarding.tourStep = allowedTourSteps.includes(source?.onboarding?.tourStep)
+      ? source.onboarding.tourStep
+      : 'welcome';
+    for (const key of ['firstCardId', 'secondCardId', 'projectId']) {
+      state.onboarding[key] = source?.onboarding?.[key] || null;
+    }
     for (const type of ['calculations', 'projects']) {
       const order = source?.sort?.[type];
       if (['new', 'old', 'name', 'timeAsc', 'timeDesc'].includes(order)) state.sort[type] = order;

@@ -619,8 +619,8 @@ input.field-error:focus {
 
 /* 3.0 — a shared geometry for the working surface, dock and overlays. */
 :root {
-  --action: #171817;
-  --action-pressed: #303432;
+  --action: #3568f0;
+  --action-pressed: #2957d5;
   --dock-height: max(72px, 4.75rem);
   --dock-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 3px));
   --dock-side: max(12px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
@@ -757,4 +757,307 @@ fieldset.item-editor { border: 1px solid var(--line); padding: 14px; border-radi
 @media (prefers-reduced-motion: reduce) {
   .wheel.is-demonstrating .wheel-options { animation: none; }
   .nav-indicator { transition: none; }
+}
+
+/* 3.1 — agreed action colours, optical grid, keyboard-safe editors and guided tour. */
+:root {
+  --page-gutter: clamp(14px, 4vw, 20px);
+  --control-height: 50px;
+  --card-pad: clamp(17px, 4.8vw, 22px);
+}
+.app {
+  padding-right: var(--page-gutter);
+  padding-left: var(--page-gutter);
+}
+.button {
+  min-height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.button.primary {
+  border: 1px solid var(--action);
+  background: var(--action);
+  color: #fff;
+  box-shadow: 0 9px 24px rgba(53,104,240,.2);
+}
+.button.primary:active:not(:disabled) {
+  border-color: var(--action-pressed);
+  background: var(--action-pressed);
+}
+.button.secondary {
+  border: 1.5px solid var(--ink);
+  background: rgba(255,255,255,.9);
+  color: var(--ink);
+}
+.button:disabled,
+.button.primary:disabled {
+  border-color: #d7d3ca;
+  background: var(--disabled-bg);
+  color: var(--disabled-ink);
+  box-shadow: none;
+}
+.text-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.welcome-skip { margin-top: 10px; }
+.toggle-row input:checked + .toggle,
+.filter-button.active {
+  border-color: var(--action);
+  background: var(--action);
+  color: #fff;
+}
+.surface,
+.saved-card,
+.project-card,
+.archive-card {
+  padding: var(--card-pad);
+}
+.topbar,
+.page-heading-row,
+.toolbar,
+.detail-toolbar,
+.section-heading,
+.saved-card-grid,
+.item-head {
+  width: 100%;
+}
+.topbar { padding-right: 60px; }
+.settings-button {
+  width: 50px;
+  height: 50px;
+}
+.screen { width: 100%; }
+.compact-form { gap: 16px; }
+.field-block { width: 100%; }
+.field-block input,
+.field-block select {
+  min-height: var(--control-height);
+  padding-right: 14px;
+  padding-left: 14px;
+}
+.label-row {
+  width: 100%;
+  gap: 10px;
+}
+.label-row label,
+.label-row > span { line-height: 1.22; }
+.help-button {
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+}
+.page-heading-row {
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.page-heading-row > :first-child { min-width: 0; }
+.page-heading-row > .icon-button {
+  flex: 0 0 50px;
+  width: 50px;
+  height: 50px;
+  margin-bottom: 3px;
+  border-radius: 50%;
+}
+.toolbar {
+  min-height: 50px;
+  margin: 0 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.toolbar > :only-child { margin-right: auto; }
+.toolbar .small-button,
+.toolbar .text-button {
+  min-height: 46px;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+.toolbar .text-button:last-child { margin-left: auto; }
+.saved-card-grid { gap: 16px; }
+.saved-card .dots-button,
+.project-card .dots-button,
+.archive-card .dots-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+.detail-toolbar {
+  min-height: 50px;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.top-detail-toolbar { justify-content: flex-start; }
+.back-button {
+  min-height: 44px;
+  padding: 9px 15px;
+}
+.dialog-close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border-radius: 50%;
+}
+.settings-list { padding: 5px var(--card-pad); }
+.settings-row { min-height: 74px; }
+.faq-item summary { min-height: 58px; }
+.screen-title { text-wrap: balance; }
+.kicker { line-height: 1.25; }
+.proba-footer,
+.app-footer {
+  padding-right: var(--page-gutter);
+  padding-left: var(--page-gutter);
+}
+.bottom-dock {
+  width: min(728px, calc(100% - 2 * var(--page-gutter)));
+}
+.bottom-nav,
+.search-button { box-shadow: 0 8px 28px rgba(22,25,30,.11), 0 1px 4px rgba(22,25,30,.05); }
+
+/* During the hand-off only the travelling title is visible. */
+body.intro-running #mainTitle,
+body.intro-running.intro-handoff #mainTitle {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
+}
+
+.dialog {
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scroll-padding-block: 82px 96px;
+}
+.dialog input,
+.dialog select,
+.dialog textarea { scroll-margin-block: 90px 110px; }
+.dialog-actions {
+  position: sticky;
+  z-index: 2;
+  bottom: -22px;
+  margin-right: -2px;
+  margin-left: -2px;
+  padding: 12px 2px 2px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), #fff 12px);
+}
+body.keyboard-open .dialog-layer {
+  padding: 8px 12px;
+  align-items: flex-start;
+}
+.sheet-layer,
+.dialog-layer,
+.search-layer {
+  right: auto;
+  left: var(--visible-left, 0px);
+  width: var(--visible-width, 100vw);
+}
+body.keyboard-open .dialog {
+  max-height: calc(var(--visible-height, 100dvh) - 16px);
+  border-radius: 22px;
+}
+
+.tour-layer {
+  position: fixed;
+  z-index: 285;
+  inset: 0;
+  pointer-events: none;
+}
+.tour-spotlight {
+  position: fixed;
+  z-index: 0;
+  border: 2px solid rgba(87,132,255,.95);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 5px rgba(87,132,255,.16),
+    0 0 0 9999px rgba(15,18,17,.58);
+  transition: top .28s ease, left .28s ease, width .28s ease, height .28s ease;
+  pointer-events: none;
+}
+.tour-coach {
+  position: fixed;
+  z-index: 1;
+  width: min(390px, calc(100% - 28px));
+  max-height: min(46dvh, 360px);
+  padding: 17px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,.92);
+  border-radius: 24px;
+  background: rgba(255,255,255,.97);
+  color: var(--ink);
+  box-shadow: 0 20px 65px rgba(7,10,12,.28);
+  pointer-events: auto;
+  transition: top .28s ease, left .28s ease;
+}
+.tour-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+#tourProgress {
+  color: #646861;
+  font-size: .72rem;
+  font-weight: 780;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+#tourSkip {
+  min-height: 38px;
+  padding: 6px 2px 6px 10px;
+  border: 0;
+  background: transparent;
+  color: #6b6e68;
+  font-size: .76rem;
+  font-weight: 720;
+}
+.tour-coach h3 {
+  margin: 0 0 7px;
+  font-size: 1.25rem;
+  line-height: 1.08;
+  letter-spacing: -.025em;
+}
+.tour-coach p {
+  margin: 0;
+  color: #555852;
+  font-size: .9rem;
+  line-height: 1.48;
+}
+.tour-coach #tourNext { margin-top: 14px; }
+.tour-target {
+  scroll-margin-block: 96px;
+}
+.tour-shell-raised { isolation: auto; }
+body.intro-running .tour-layer { display: none !important; }
+body.tour-active #profileBack { visibility: hidden; }
+
+@media (max-width: 430px) {
+  .toolbar { gap: 9px; }
+  .toolbar .small-button,
+  .toolbar .text-button {
+    min-height: 44px;
+    padding: 9px 12px;
+    font-size: .82rem;
+  }
+  .tour-coach {
+    width: calc(100% - 24px);
+    padding: 15px;
+    border-radius: 21px;
+  }
+}
+@media (max-width: 350px) {
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .toolbar .small-button,
+  .toolbar .text-button { width: 100%; white-space: normal; }
 }

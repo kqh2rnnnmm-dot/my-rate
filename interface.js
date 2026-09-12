@@ -1,4 +1,4 @@
-/* MyRate 3.0: shared icons, accessible overlays and isolated navigation gestures. */
+/* MyRate 3.1: shared icons, accessible overlays and isolated navigation gestures. */
 window.MyRateInterface = (() => {
   'use strict';
   const paths = {

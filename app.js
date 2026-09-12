@@ -6,6 +6,7 @@ const wheelValues={},wheelDefs={},bags={};
 let lastSaved=clone(state), busy=false, savingCurrent=false, setupOpen=false, firstWish=false;
 let navControl=null, favoriteOrigin='Favorites', projectOrigin='Projects', profileReturn='Current';
 let searchScope='all', searchRelease=null, searchScroll=0, sheetRelease=null;
+let tourTarget=null, tourShells=[], tourPaintedStep='', tourPositionTimer=null;
 
 const activeCalcs=()=>state.calculations.filter(x=>x.status!=='archived'),activeProjects=()=>state.projects.filter(x=>x.status!=='archived'),find=(a,id)=>a.find(x=>x.id===id);
 const privacy=()=> 'Сумма, карточки и Большие планы сохраняются на '+(/iPhone/i.test(navigator.userAgent)?'этом iPhone.':'этом устройстве.')+' Для курсов валют обращаемся к отдельному сервису — без сумм и названий.';
@@ -60,9 +61,192 @@ async function magic(key, fn) {
 }
 function closeHelp(){$('helpPopover').classList.add('hidden')}
 function dismissKeyboard(){document.activeElement?.blur?.();document.body.classList.remove('keyboard-open')}
-function runIntro(mode='launch'){if(introActive)return;const intro=$('introScreen'),title=$('introTitle'),target=$('mainTitle'),theme=document.querySelector('meta[name="theme-color"]'),isReturn=mode==='return',reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,holdMs=isReturn?C.introReturnHoldMs:C.introHoldMs,brandMs=isReturn?C.introReturnBrandMs:C.introBrandMs,started=performance.now();let leaving=false,exitTimer,brandTimer,finishTimer;introActive=true;intro.className='intro-screen hidden';intro.removeAttribute('style');title.className='intro-title';title.removeAttribute('style');document.documentElement.classList.add('intro-pending');const finish=()=>{clearTimeout(exitTimer);clearTimeout(brandTimer);clearTimeout(finishTimer);intro.removeEventListener('pointerup',skip);document.removeEventListener('keydown',key);document.documentElement.classList.remove('intro-pending');document.body.classList.remove('intro-running','intro-handoff','intro-reduced');theme.content='#f2f0ea';intro.classList.add('hidden');introActive=false},leave=()=>{if(leaving)return;leaving=true;clearTimeout(exitTimer);clearTimeout(brandTimer);intro.classList.add('is-branded');const from=title.getBoundingClientRect(),to=target.getBoundingClientRect(),scale=from.width?to.width/from.width:1;title.style.transition='none';title.style.left=`${from.left}px`;title.style.top=`${from.top}px`;title.style.width=`${from.width}px`;title.classList.add('is-frozen');void title.offsetWidth;title.style.removeProperty('transition');intro.style.setProperty('--intro-x',`${to.left-from.left}px`);intro.style.setProperty('--intro-y',`${to.top-from.top}px`);intro.style.setProperty('--intro-scale',String(scale));document.documentElement.classList.remove('intro-pending');document.body.classList.add('intro-handoff');theme.content='#f2f0ea';void title.offsetWidth;requestAnimationFrame(()=>requestAnimationFrame(()=>intro.classList.add('is-leaving')));finishTimer=setTimeout(finish,reduced?620:C.introExitMs+80)},skip=()=>{if(performance.now()-started>=C.introSkipDelayMs)leave()},key=e=>{if(['Escape','Enter',' '].includes(e.key))skip()};theme.content='#10100f';document.body.classList.add('intro-running');if(reduced){intro.classList.add('is-reduced');document.body.classList.add('intro-reduced')}intro.classList.remove('hidden');requestAnimationFrame(()=>intro.classList.add('is-running'));brandTimer=setTimeout(()=>intro.classList.add('is-branded'),reduced?900:brandMs);exitTimer=setTimeout(leave,reduced?1800:holdMs);intro.addEventListener('pointerup',skip);document.addEventListener('keydown',key)}
+function runIntro(mode='launch') {
+  if(introActive)return;
+  const intro=$('introScreen'),title=$('introTitle'),target=$('mainTitle');
+  const theme=document.querySelector('meta[name="theme-color"]');
+  const isReturn=mode==='return',reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const holdMs=isReturn?C.introReturnHoldMs:C.introHoldMs;
+  const brandMs=isReturn?C.introReturnBrandMs:C.introBrandMs;
+  const started=performance.now();
+  let leaving=false,exitTimer,brandTimer,finishTimer;
+
+  const finish=()=>{
+    clearTimeout(exitTimer);clearTimeout(brandTimer);clearTimeout(finishTimer);
+    intro.removeEventListener('pointerup',skip);document.removeEventListener('keydown',key);
+    intro.classList.add('hidden');
+    document.documentElement.classList.remove('intro-pending');
+    document.body.classList.remove('intro-running','intro-handoff','intro-reduced');
+    theme.content='#f2f0ea';introActive=false;
+    requestAnimationFrame(()=>syncTour());
+  };
+  const measureAndLeave=()=>{
+    if(!introActive)return;
+    const from=title.getBoundingClientRect(),to=target.getBoundingClientRect();
+    const scale=from.width?to.width/from.width:1;
+    title.style.transition='none';
+    title.style.left=from.left+'px';title.style.top=from.top+'px';title.style.width=from.width+'px';
+    title.classList.add('is-frozen');void title.offsetWidth;
+    title.style.removeProperty('transition');
+    intro.style.setProperty('--intro-x',(to.left-from.left)+'px');
+    intro.style.setProperty('--intro-y',(to.top-from.top)+'px');
+    intro.style.setProperty('--intro-scale',String(scale));
+    document.documentElement.classList.remove('intro-pending');
+    document.body.classList.add('intro-handoff');
+    theme.content='#f2f0ea';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>intro.classList.add('is-leaving')));
+    finishTimer=setTimeout(finish,reduced?620:C.introExitMs+80);
+  };
+  const leave=()=>{
+    if(leaving)return;
+    leaving=true;clearTimeout(exitTimer);clearTimeout(brandTimer);
+    intro.classList.add('is-branded');
+    // Two frames let Safari finish layout before the travelling title is measured.
+    requestAnimationFrame(()=>requestAnimationFrame(measureAndLeave));
+  };
+  const skip=()=>{if(performance.now()-started>=C.introSkipDelayMs)leave();};
+  const key=e=>{if(['Escape','Enter',' '].includes(e.key))skip();};
+
+  introActive=true;intro.className='intro-screen hidden';intro.removeAttribute('style');
+  title.className='intro-title';title.removeAttribute('style');
+  document.documentElement.classList.add('intro-pending');
+  document.body.classList.add('intro-running');
+  theme.content='#10100f';
+  if(reduced){intro.classList.add('is-reduced');document.body.classList.add('intro-reduced');}
+  intro.classList.remove('hidden');
+  requestAnimationFrame(()=>intro.classList.add('is-running'));
+  brandTimer=setTimeout(()=>intro.classList.add('is-branded'),reduced?900:brandMs);
+  exitTimer=setTimeout(leave,reduced?1800:holdMs);
+  intro.addEventListener('pointerup',skip);document.addEventListener('keydown',key);
+}
 function setupIntroLifecycle(){const remember=()=>{introHiddenAt=Date.now()},resume=()=>{if(!introHiddenAt)return;const awayFor=Date.now()-introHiddenAt;introHiddenAt=0;if(awayFor>=C.introReturnAfterMs)runIntro('return')};document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();else resume()});window.addEventListener('pagehide',remember);window.addEventListener('pageshow',event=>{if(event.persisted)resume()})}
 function showHelp(btn){const box=$('helpPopover'),text=(C.help[btn.dataset.help]||'').replace('{privacy}',privacy());if(!text||(!box.classList.contains('hidden')&&box.dataset.for===btn.dataset.help)){closeHelp();return}box.textContent=text;box.dataset.for=btn.dataset.help;box.classList.remove('hidden');const r=btn.getBoundingClientRect(),w=Math.min(320,innerWidth-28);box.style.width=w+'px';box.style.left=Math.max(14,Math.min(innerWidth-w-14,r.right-w))+'px';box.style.top=Math.min(innerHeight-box.offsetHeight-14,r.bottom+8)+'px'}
+function tourActive(){return state.onboarding?.tourActive===true&&!state.onboarding?.tourCompleted;}
+function clearTour() {
+  clearTimeout(tourPositionTimer);
+  tourTarget?.classList.remove('tour-target');tourTarget=null;
+  tourShells.forEach(el=>el.classList.remove('tour-shell-raised'));tourShells=[];
+  $('tourLayer').classList.add('hidden');document.body.classList.remove('tour-active');tourPaintedStep='';
+}
+function saveTour(step,extra={}) {
+  const next=clone(state);
+  next.onboarding={...next.onboarding,...extra,tourActive:true,tourCompleted:false,tourStep:step};
+  if(!commit(next))return false;
+  syncTour();return true;
+}
+function finishTour() {
+  const next=clone(state);
+  next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true,tourStep:'welcome'};
+  if(!commit(next))return;
+  clearTour();setupOpen=false;switchScreen('Current');renderProfileStage();
+}
+function skipTour() {
+  const next=clone(state);
+  next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true};
+  if(!commit(next))return;
+  clearTour();
+  if(!Calc.isValidProfile(state.profile||{})){setupOpen=true;renderProfileStage();}
+}
+function beginTour() {
+  const next=clone(state);
+  next.onboarding={...next.onboarding,tourActive:true,tourCompleted:false,tourStep:'rhythmAmount',firstCardId:null,secondCardId:null,projectId:null};
+  if(!commit(next))return;
+  selectionMode=false;selected.clear();items=[];setupOpen=true;profileReturn='Current';
+  if(state.profile)fillProfile(state.profile);
+  switchScreen('Current');renderProfileStage();renderCurrent();
+  requestAnimationFrame(()=>syncTour(true));
+}
+function tourDefinition() {
+  if(!tourActive())return null;
+  const step=state.onboarding.tourStep,copy=C.tour?.[step];
+  if(!copy)return null;
+  let selector='',next=null;
+  if(step==='rhythmAmount'){selector='#income';next=()=>saveTour('rhythmPeriod');}
+  if(step==='rhythmPeriod'){selector='#rhythmChoice';next=()=>saveTour('rhythmSchedule');}
+  if(step==='rhythmSchedule'){selector='#rhythmSchedule';next=()=>saveTour('rhythmSave');}
+  if(step==='rhythmSave')selector='#saveProfile';
+  if(step==='firstName'){selector='#itemName';next=()=>saveTour('firstDetails');}
+  if(step==='firstDetails'){selector='#wishDetails';next=()=>saveTour('firstAdd');}
+  if(step==='firstAdd'||step==='second')selector=step==='firstAdd'?'#addItem':'#wishForm';
+  if(step==='firstResult'){selector='#itemsList .item-card';next=()=>saveTour('saveFirst');}
+  if(step==='saveFirst'||step==='saveSecond')selector='#saveCalculation';
+  if(step==='firstSaved'){
+    selector=state.onboarding.firstCardId?'[data-id="'+state.onboarding.firstCardId+'"]':'#favoritesList .saved-card';
+    next=()=>{if(saveTour('second')){setupOpen=false;switchScreen('Current');renderProfileStage();}};
+  }
+  if(step==='selectFirst')selector=state.onboarding.firstCardId?'[data-id="'+state.onboarding.firstCardId+'"]':'#favoritesList .saved-card';
+  if(step==='selectSecond')selector=state.onboarding.secondCardId?'[data-id="'+state.onboarding.secondCardId+'"]':'#favoritesList .saved-card:not(.selected)';
+  if(step==='combine')selector='#combineSelected';
+  if(step==='planResult'){selector='#projectDetailView';next=()=>{if(saveTour('finish'))switchScreen('Current');};}
+  if(step==='finish'){selector='#quickProfile';next=finishTour;}
+  return {step,copy,selector,next};
+}
+function positionTour() {
+  if(!tourTarget||$('tourLayer').classList.contains('hidden'))return;
+  const viewport=window.visualViewport;
+  const viewTop=viewport?.offsetTop||0,viewLeft=viewport?.offsetLeft||0;
+  const viewHeight=viewport?.height||innerHeight,viewWidth=viewport?.width||innerWidth;
+  const viewBottom=viewTop+viewHeight,viewRight=viewLeft+viewWidth;
+  const source=tourTarget.getBoundingClientRect();
+  const pad=6;
+  const left=Math.max(viewLeft+8,Math.min(viewRight-32,source.left-pad));
+  const top=Math.max(viewTop+8,Math.min(viewBottom-32,source.top-pad));
+  const right=Math.max(left+24,Math.min(viewRight-8,source.right+pad));
+  const bottom=Math.max(top+24,Math.min(viewBottom-8,source.bottom+pad));
+  const spot=$('tourSpotlight');
+  spot.style.left=left+'px';spot.style.top=top+'px';
+  spot.style.width=Math.max(24,right-left)+'px';spot.style.height=Math.max(24,bottom-top)+'px';
+  const coach=$('tourCoach'),coachWidth=Math.min(390,viewWidth-28);
+  coach.style.width=coachWidth+'px';
+  const coachHeight=Math.min(coach.scrollHeight||260,Math.min(viewHeight*.46,360));
+  const below=bottom+14,above=top-coachHeight-14;
+  let coachTop;
+  if(viewBottom-below>=coachHeight)coachTop=below;
+  else if(above>=viewTop+12)coachTop=above;
+  else coachTop=Math.max(viewTop+12,viewBottom-coachHeight-12);
+  const center=(source.left+source.right)/2;
+  coach.style.left=Math.max(viewLeft+12,Math.min(viewRight-coachWidth-12,center-coachWidth/2))+'px';
+  coach.style.top=coachTop+'px';
+}
+function syncTour(forceScroll=false) {
+  const def=tourDefinition();
+  if(!def||introActive){if(!def)clearTour();return;}
+  const target=document.querySelector(def.selector);
+  if(!target||target.closest('.hidden')||target.closest('.screen:not(.active)')){$('tourLayer').classList.add('hidden');return;}
+  tourTarget?.classList.remove('tour-target');
+  tourShells.forEach(el=>el.classList.remove('tour-shell-raised'));tourShells=[];
+  tourTarget=target;target.classList.add('tour-target');document.body.classList.add('tour-active');
+  const shell=target.closest('#bottomNav, #selectionBar, .dialog-layer');
+  if(shell){shell.classList.add('tour-shell-raised');tourShells.push(shell);}
+  $('tourProgress').textContent=def.copy.progress;
+  $('tourTitle').textContent=def.copy.title;$('tourText').textContent=def.copy.text;
+  const next=$('tourNext');next.classList.toggle('hidden',!def.copy.action);
+  next.textContent=def.copy.action||'';next.onclick=def.next||null;
+  if(def.step==='rhythmAmount')next.disabled=!validNumber($('income'));
+  else if(def.step==='rhythmSchedule')next.disabled=![$('days'),$('hours')].every(validNumber);
+  else if(def.step==='firstName')next.disabled=!$('itemName').value.trim();
+  else if(def.step==='firstDetails')next.disabled=![$('itemPrice'),$('itemQty')].every(validNumber);
+  else next.disabled=false;
+  $('tourLayer').classList.remove('hidden');
+  const changed=tourPaintedStep!==def.step;tourPaintedStep=def.step;
+  if(changed||forceScroll)target.scrollIntoView?.({block:'center',inline:'nearest',behavior:'smooth'});
+  clearTimeout(tourPositionTimer);tourPositionTimer=setTimeout(positionTour,changed?320:20);
+}
+function resumeTour() {
+  if(!tourActive())return;
+  let step=state.onboarding.tourStep;
+  if(['firstResult','saveFirst'].includes(step)&&!items.length)step='firstName';
+  if(step==='saveSecond'&&!items.length)step='second';
+  if(step!==state.onboarding.tourStep){saveTour(step);return;}
+  if(['rhythmAmount','rhythmPeriod','rhythmSchedule','rhythmSave'].includes(step)){setupOpen=true;switchScreen('Current');renderProfileStage();}
+  else if(['firstName','firstDetails','firstAdd','firstResult','saveFirst','second','saveSecond','finish'].includes(step)){setupOpen=false;switchScreen('Current');renderProfileStage();}
+  else if(['firstSaved','selectFirst','selectSecond','combine'].includes(step))switchScreen('Favorites');
+  else if(step==='planResult'){
+    switchScreen('Projects');
+    if(state.onboarding.projectId&&find(state.projects,state.onboarding.projectId))openProject(state.onboarding.projectId);
+  }
+  requestAnimationFrame(()=>syncTour(true));
+}
 function dialog({title,text='',body=null,actions=[{label:'Понятно',value:true,primary:true}]}) {
   closeSheet();
   return new Promise(resolve=>{
@@ -180,12 +364,15 @@ async function saveProfile() {
       targets.forEach(c=>{c.profile=clone(profile);c.fx=fx?clone(fx):null;c.updatedAt=stamp();});
       next.projects.filter(p=>p.status!=='archived').forEach(p=>p.updatedAt=stamp());
     }
+    const guided=tourActive()&&['rhythmAmount','rhythmPeriod','rhythmSchedule','rhythmSave'].includes(state.onboarding.tourStep);
+    if(guided)next.onboarding={...next.onboarding,tourStep:'firstName',tourActive:true,tourCompleted:false};
     if(!commit(next))return;
     firstWish=!old;setupOpen=false;
     selectWheel('itemCurrency',profile.currency);
     renderProfileStage();switchScreen('Current');renderAll();
     $('fxStatus').textContent=fx?'Курсы валют: '+date(fx.updated*1000):'В своей валюте считаем без интернета.';
     if(mode==='all')toast('Новый ритм принят. Всё активное пересчитано.');
+    if(guided)requestAnimationFrame(()=>syncTour(true));
   } finally {busy=false;updateFormButtons();}
 }
 
@@ -221,6 +408,8 @@ function renderCurrent() {
 async function addItem() {
   if(busy||!itemFormReady()||!state.profile)return;
   const item={id:S.uid('item'),name:$('itemName').value.trim(),price:num('itemPrice'),qty:num('itemQty'),currency:wheelValues.itemCurrency};
+  const guidedStep=tourActive()?state.onboarding.tourStep:null;
+  let added=false;
   dismissKeyboard();
   await magic('calculate',async()=>{
     if(item.currency!==state.profile.currency&&(!state.fx||state.fx.base!==state.profile.currency||!state.fx.rates?.[item.currency])) {
@@ -228,9 +417,11 @@ async function addItem() {
       if(!fx.rates[item.currency])return toast('Не удалось получить курс этой валюты.');
       const next=clone(state);next.fx=fx;if(!commit(next))return;
     }
-    items.push(item);clearItemForm();renderCurrent();
+    items.push(item);added=true;clearItemForm();renderCurrent();
     if(items.length!==2)toast(null,'itemAdded');
   });
+  if(added&&['firstName','firstDetails','firstAdd'].includes(guidedStep))saveTour('firstResult');
+  if(added&&guidedStep==='second')saveTour('saveSecond');
 }
 function snapshot(){return K.card(items,state.profile,state.fx,unit,autoTitle(items));}
 async function saveCalculation() {
@@ -246,13 +437,20 @@ async function saveCalculation() {
     if(!mode)return;
     let title;
     if(mode==='plan'){title=await ask('Новый большой план','Как назовём то, что получилось?',autoTitle(items),'project');if(!title)return;}
-    const next=clone(state);let createdPlan;
+    const next=clone(state);let createdPlan,createdCards=[];
     if(mode==='plan'){createdPlan=K.plan(items.map(it=>K.card([it],state.profile,state.fx,unit,it.name)),title,unit,false);next.projects.unshift(createdPlan);}
-    else if(mode==='separate')next.calculations.unshift(...items.map(it=>K.card([it],state.profile,state.fx,unit,it.name)));
-    else next.calculations.unshift(snapshot());
+    else if(mode==='separate'){createdCards=items.map(it=>K.card([it],state.profile,state.fx,unit,it.name));next.calculations.unshift(...createdCards);}
+    else {createdCards=[snapshot()];next.calculations.unshift(createdCards[0]);}
+    const guidedStep=tourActive()?state.onboarding.tourStep:null;
+    if(guidedStep==='saveFirst'&&createdCards[0])next.onboarding={...next.onboarding,tourStep:'firstSaved',firstCardId:createdCards[0].id,tourActive:true,tourCompleted:false};
+    if(guidedStep==='saveSecond'&&createdCards[0])next.onboarding={...next.onboarding,tourStep:'selectFirst',secondCardId:createdCards[0].id,tourActive:true,tourCompleted:false};
     if(!commit(next))return;
     const count=items.length;items=[];clearItemForm();renderAll();
-    if(createdPlan){switchScreen('Projects');openProject(createdPlan.id);toast('Большой план собран. Серьёзные намерения зафиксированы.');}
+    if(guidedStep==='saveFirst'||guidedStep==='saveSecond'){
+      selectionMode=false;selected.clear();switchScreen('Favorites');renderFavorites();
+      toast(null,'favoriteSaved');requestAnimationFrame(()=>syncTour(true));
+    }
+    else if(createdPlan){switchScreen('Projects');openProject(createdPlan.id);toast('Большой план собран. Серьёзные намерения зафиксированы.');}
     else if(mode==='separate')toast('Разложили по карточкам. Все '+count+' ждут в «Избранном».');
     else if(count>1)toast('Сохранили одной компанией. Ищи их в «Избранном».');
     else toast(null,'favoriteSaved');
@@ -263,8 +461,16 @@ function date(v){return new Date(v).toLocaleDateString('ru-RU')}
 function empty(title,text){return `<div class="empty-state"><strong>${title}</strong>${text}</div>`}
 function bindLongPress(card,id){U.hold(card,e=>{if(e.target.closest('.dots-button'))actionCalculation(find(state.calculations,id));else enterSelection(id);});}
 function renderFavorites(){const list=K.sorted(activeCalcs(),state.sort.calculations),box=$('favoritesList');$('clearFavorites').classList.toggle('hidden',!list.length||selectionMode);box.classList.toggle('selection-mode',selectionMode);box.innerHTML='';if(!list.length){box.innerHTML=empty('Здесь пока ничего не припрятано.','Добавь карточку через «Хочу — могу?», и она появится здесь.');updateSelection();return}list.forEach(c=>{const s=Calc.calculationSummary(c),u=c.displayUnit||'hours',card=document.createElement('article');card.className='saved-card'+(selected.has(c.id)?' selected':selectionMode?' selection-muted':'');card.dataset.id=c.id;card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(c.createdAt)} · ${c.items.length} поз.</div><div class="saved-summary">${Calc.smart(Calc.unitValue(s.hours,u,c.profile),u)}</div></div><button class="dots-button" type="button" aria-label="Действия">•••</button><div class="selection-mark">${selected.has(c.id)?'✓':''}</div></div>`;card.querySelector('.saved-title').textContent=c.title;card.onclick=e=>{if(card.dataset.held){delete card.dataset.held;return}if(e.target.closest('.dots-button'))return actionCalculation(c);selectionMode?toggleSelected(c.id):openFavorite(c.id)};bindLongPress(card,c.id);box.append(card)});updateSelection()}
-function enterSelection(id){selectionMode=true;selected.add(id);renderFavorites();try{navigator.vibrate?.(8)}catch{}}
-function toggleSelected(id){selected.has(id)?selected.delete(id):selected.add(id);if(!selected.size)selectionMode=false;renderFavorites()}
+function tourSelectionChanged(){
+  if(!tourActive())return;
+  const step=state.onboarding.tourStep;
+  if(step==='selectFirst'&&selected.size>=1)saveTour(selected.size>=2?'combine':'selectSecond');
+  else if(step==='selectSecond'&&selected.size>=2)saveTour('combine');
+  else if(step==='selectSecond'&&!selected.size)saveTour('selectFirst');
+  else if(step==='combine'&&selected.size<2)saveTour(selected.size?'selectSecond':'selectFirst');
+}
+function enterSelection(id){selectionMode=true;selected.add(id);renderFavorites();tourSelectionChanged();try{navigator.vibrate?.(8)}catch{}}
+function toggleSelected(id){selected.has(id)?selected.delete(id):selected.add(id);if(!selected.size)selectionMode=false;renderFavorites();tourSelectionChanged()}
 function updateSelection() {
   selected.forEach(id=>{if(!activeCalcs().some(c=>c.id===id))selected.delete(id);});
   const n=selected.size,on=currentScreen()==='Favorites'&&!openedFavorite&&selectionMode,canCombine=on&&n>=2;
@@ -325,7 +531,17 @@ function archiveCalc(c){c.status='archived';c.archivedAt=stamp();c.updatedAt=sta
 async function deleteCalc(c){const used=state.projects.some(p=>p.calculations.some(x=>x.sourceId===c.id)),text=used?'В «Избранном» карточка исчезнет, но останется внутри уже собранных «Больших планов».':'Она будет удалена с этого устройства. Вернуть её не получится.';if(!await confirm('Убрать карточку?',text,'Убрать'))return;state.calculations=state.calculations.filter(x=>x.id!==c.id);if(!save())return;if(openedFavorite)closeFavorite();renderAll();toast(null,'deleted')}
 function actionCalculation(c){sheet(c.title,[{label:'Открыть',run:()=>openFavorite(c.id)},{label:'Выбрать',run:()=>enterSelection(c.id)},{label:'Переименовать',run:()=>renameCalc(c)},{label:'Изменить детали',run:()=>editCalc(c)},...(c.items.length>1?[{label:'Разделить карточку',run:()=>splitCard(c)}]:[]),{label:'Пересчитать по текущему ритму',run:()=>recalcCalc(c)},{label:'Обновить курс валют',run:()=>updateCalcFx(c)},{label:'Добавить в «Большой план»',run:()=>addOneToProject(c)},{label:'Переместить в Архив',run:()=>archiveCalc(c)},{label:'Удалить',danger:true,run:()=>deleteCalc(c)}])}
 
-async function combine(){const chosen=activeCalcs().filter(c=>selected.has(c.id));if(chosen.length<2)return;const name=await ask('Новый большой план','Как назовём то, что получилось?','Новый большой план','project');if(!name)return;state.projects.unshift({id:S.uid('project'),createdAt:stamp(),updatedAt:stamp(),archivedAt:null,status:'active',type:'project',title:name,displayUnit:'hours',calculations:chosen.map(c=>({...clone(c),id:S.uid('pc'),sourceId:c.id,status:'favorite'}))});if(!save())return;exitSelection();renderAll();toast(null,'projectSaved')}
+async function combine(){
+  const chosen=activeCalcs().filter(c=>selected.has(c.id));if(chosen.length<2)return;
+  const name=await ask('Новый большой план','Как назовём то, что получилось?','Новый большой план','project');if(!name)return;
+  const project={id:S.uid('project'),createdAt:stamp(),updatedAt:stamp(),archivedAt:null,status:'active',type:'project',title:name,displayUnit:'hours',calculations:chosen.map(c=>({...clone(c),id:S.uid('pc'),sourceId:c.id,status:'favorite'}))};
+  const next=clone(state);next.projects.unshift(project);
+  const guided=tourActive()&&state.onboarding.tourStep==='combine';
+  if(guided)next.onboarding={...next.onboarding,tourStep:'planResult',projectId:project.id,tourActive:true,tourCompleted:false};
+  if(!commit(next))return;
+  exitSelection();renderAll();toast(null,'projectSaved');
+  if(guided){switchScreen('Projects');openProject(project.id);requestAnimationFrame(()=>syncTour(true));}
+}
 async function addOneToProject(c){const projects=activeProjects();if(!projects.length)return toast('Сначала собери большой план минимум из двух карточек.');sheet('Выбери большой план',projects.map(p=>({label:p.title,run:()=>{if(p.calculations.some(x=>x.sourceId===c.id))return toast('Эта карточка уже есть в выбранном плане.');p.calculations.push({...clone(c),id:S.uid('pc'),sourceId:c.id});p.updatedAt=stamp();if(!save())return;renderAll();toast('Карточка добавлена в «Большой план».')}})))}
 function renderProjects(){const list=K.sorted(activeProjects(),state.sort.projects,true),box=$('projectsList');$('clearProjects').classList.toggle('hidden',!list.length);box.innerHTML='';if(!list.length){box.innerHTML=empty('Больших планов пока нет.','Выбери минимум две карточки в «Избранном» или собери план прямо из текущих хотелок.');return}list.forEach(p=>{const s=Calc.projectSummary(p),first=p.calculations[0]?.profile||state.profile,u=p.displayUnit||'hours',card=document.createElement('article');card.className='project-card';card.innerHTML=`<div class="saved-card-grid"><div><div class="saved-title"></div><div class="saved-meta">${date(p.createdAt)} · ${p.calculations.length} карточек</div><div class="saved-summary">${first?Calc.smart(projectTime(p,u),u):'—'}</div></div><button class="dots-button" type="button">•••</button></div>`;card.querySelector('.saved-title').textContent=p.title;card.onclick=e=>e.target.closest('.dots-button')?actionProject(p):openProject(p.id);box.append(card)})}
 function openProject(id,origin='Projects') {
@@ -417,13 +633,14 @@ function switchScreen(name) {
   $('bottomNav').classList.toggle('hidden',!Calc.isValidProfile(state.profile||{})||setupOpen&&name==='Current'||['Archive','Settings','Faq'].includes(name));
   $('appFooter').classList.toggle('hidden',['Archive','Settings','Faq'].includes(name));
   updateSelection();navControl?.sync();updateWheelHelp();scrollTo({top:0,behavior:'instant'});
+  requestAnimationFrame(()=>syncTour());
 }
 function renderAll() {
   renderCurrent();renderFavorites();renderProjects();
   if(currentScreen()==='Archive')renderArchive();
   if(openedFavorite)renderFavoriteDetail();if(openedProject)renderProjectDetail();
   $('magicToggle').checked=state.settings.magic;$('jokesToggle').checked=state.settings.jokes;
-  updateFormButtons();U.icons();
+  updateFormButtons();U.icons();requestAnimationFrame(()=>syncTour());
 }
 
 async function updateAllFx() {
@@ -604,10 +821,22 @@ function renderSearch() {
 function setupExperience() {
   U.icons();
   document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea,select'))e.preventDefault();});
-  $('startSetup').onclick=()=>{setupOpen=true;renderProfileStage();scrollTo({top:0});};
+  $('startSetup').onclick=()=>state.onboarding.tourCompleted
+    ?(setupOpen=true,renderProfileStage(),scrollTo({top:0}))
+    :beginTour();
+  $('skipTourIntro').onclick=()=>{
+    const next=clone(state);next.onboarding={...next.onboarding,tourActive:false,tourCompleted:true};
+    if(!commit(next))return;setupOpen=true;renderProfileStage();scrollTo({top:0});
+  };
+  $('tourSkip').onclick=skipTour;
   $('quickProfile').onclick=()=>editProfileFrom('Current');
   $('profileBack').onclick=()=>{setupOpen=false;fillProfile(state.profile);renderProfileStage();switchScreen(profileReturn);};
   $('editProfile').onclick=()=>editProfileFrom('Settings');
+  $('restartTour').onclick=async()=>{
+    const detail=items.length?' Текущий несохранённый список будет очищен.':'';
+    if(!await confirm('Пройти знакомство заново?','Ты создашь две настоящие карточки и один Большой план. Всё уже сохранённое останется на месте.'+detail,'Начать знакомство'))return;
+    beginTour();
+  };
   document.querySelectorAll('[data-section-menu]').forEach(b=>b.onclick=()=>sectionMenu(b.dataset.sectionMenu));
   $('searchButton').onclick=openSearch;$('closeSearch').onclick=closeSearch;
   $('searchInput').oninput=renderSearch;
@@ -619,17 +848,29 @@ function setupExperience() {
   $('favoriteDetailMenu').onclick=()=>{const c=find(state.calculations,openedFavorite);if(c)c.status==='archived'?archiveActions(c,'calculations'):actionCalculation(c);};
   $('projectDetailMenu').onclick=()=>{const p=find(state.projects,openedProject);if(p)p.status==='archived'?archiveActions(p,'projects'):actionProject(p);};
   // Match the visual viewport when the on-screen keyboard reduces the usable height.
+  const revealFocused=()=>{
+    const active=document.activeElement;
+    if(!active?.matches?.('input, textarea, select'))return;
+    requestAnimationFrame(()=>active.scrollIntoView?.({block:'center',inline:'nearest',behavior:'smooth'}));
+  };
   const viewport=()=>{
     const v=window.visualViewport;
     document.documentElement.style.setProperty('--visible-height',(v?.height||innerHeight)+'px');
     document.documentElement.style.setProperty('--visible-top',(v?.offsetTop||0)+'px');
+    document.documentElement.style.setProperty('--visible-width',(v?.width||innerWidth)+'px');
+    document.documentElement.style.setProperty('--visible-left',(v?.offsetLeft||0)+'px');
+    clearTimeout(viewport.focusTimer);viewport.focusTimer=setTimeout(revealFocused,90);
+    positionTour();
   };
   window.visualViewport?.addEventListener('resize',viewport);
-  window.visualViewport?.addEventListener('scroll',viewport);addEventListener('resize',viewport);viewport();
+  window.visualViewport?.addEventListener('scroll',viewport);addEventListener('resize',viewport);
+  addEventListener('scroll',()=>{clearTimeout(tourPositionTimer);tourPositionTimer=setTimeout(positionTour,30);},{passive:true});
+  document.addEventListener('focusin',()=>{setTimeout(revealFocused,90);setTimeout(revealFocused,320);});
+  viewport();
 }
 
 document.querySelectorAll('[data-number]').forEach(i=>{i.addEventListener('input',()=>sanitize(i));i.addEventListener('paste',()=>setTimeout(()=>sanitize(i)))});
-document.addEventListener('input',e=>{if(e.target.matches?.('input, textarea, select')){e.target.classList.remove('field-error');e.target.removeAttribute('aria-invalid');updateFormButtons()}});
+document.addEventListener('input',e=>{if(e.target.matches?.('input, textarea, select')){e.target.classList.remove('field-error');e.target.removeAttribute('aria-invalid');updateFormButtons();syncTour()}});
 document.addEventListener('click',e=>{const help=e.target.closest('[data-help]');if(help){e.stopPropagation();showHelp(help);return}if(!e.target.closest('#helpPopover'))closeHelp();const arch=e.target.closest('[data-open-archive]');if(arch)openArchive(arch.dataset.openArchive)});
 document.addEventListener('focusin',e=>{if(e.target.matches('input, textarea, select')){closeHelp();document.body.classList.add('keyboard-open')}});document.addEventListener('focusout',()=>setTimeout(()=>{if(!document.activeElement?.matches?.('input, textarea, select'))document.body.classList.remove('keyboard-open')},120));addEventListener('scroll',closeHelp,{passive:true});
 $('saveProfile').onclick=saveProfile;$('addItem').onclick=addItem;$('clearItems').onclick=async()=>{if(await confirm('Очистить всё на этом экране?','Текущие позиции исчезнут. Настройки твоего рабочего ритма останутся на месте.','Очистить')){items=[];renderCurrent()}};$('saveCalculation').onclick=saveCalculation;
@@ -639,7 +880,7 @@ $('favoriteBack').onclick=closeFavorite;$('favoriteDetailMenu').onclick=()=>{con
 $('archiveBack').onclick=()=>switchScreen(previousScreen);document.querySelectorAll('[data-archive-tab]').forEach(b=>b.onclick=()=>{archiveTab=b.dataset.archiveTab;renderArchive()});
 {const gear=$('settingsButton'),leaveSettings=()=>switchScreen(previousScreen&&previousScreen!=='Settings'?previousScreen:'Current');let hold,x,y;gear.onpointerdown=e=>{x=e.clientX;y=e.clientY;hold=setTimeout(()=>{gear.dataset.held='1';sheet('Быстрые настройки',[{label:'Подкрутить мой рабочий ритм',run:()=>{$('editProfile').click()}},{label:state.settings.magic?'Убрать магию пересчёта':'Вернуть магию пересчёта',run:()=>{state.settings.magic=!state.settings.magic;if(!save())return;renderAll()}},{label:state.settings.jokes?'Убавить разговорчивость':'Вернуть шутки и реплики',run:()=>{state.settings.jokes=!state.settings.jokes;if(!save())return;renderAll()}},{label:'Что за магия?',run:()=>{previousScreen=currentScreen();switchScreen('Faq')}}])},C.cardHoldMs)};gear.onpointermove=e=>{if(Math.abs(e.clientX-x)>8||Math.abs(e.clientY-y)>8)clearTimeout(hold)};gear.onpointerup=gear.onpointercancel=()=>clearTimeout(hold);gear.onclick=()=>{if(gear.dataset.held){delete gear.dataset.held;return}if(currentScreen()==='Settings'){leaveSettings();return}previousScreen=currentScreen();switchScreen('Settings')};$('settingsBack').onclick=leaveSettings;}
 $('openFaq').onclick=()=>{previousScreen='Settings';switchScreen('Faq')};$('faqBack').onclick=()=>switchScreen(previousScreen);
-$('editProfile').onclick=()=>{previousScreen='Settings';fillProfile(state.profile);$('profileEditor').classList.remove('hidden');$('converter').classList.add('hidden');switchScreen('Current')};$('magicToggle').onchange=e=>{state.settings.magic=e.target.checked;save()};$('jokesToggle').onchange=e=>{state.settings.jokes=e.target.checked;save()};$('updateAllFx').onclick=updateAllFx;
+$('editProfile').onclick=()=>editProfileFrom('Settings');$('magicToggle').onchange=e=>{state.settings.magic=e.target.checked;save()};$('jokesToggle').onchange=e=>{state.settings.jokes=e.target.checked;save()};$('updateAllFx').onclick=updateAllFx;
 
 wheelValues.unit=unit;wheelValues.favoriteUnit='hours';wheelValues.projectUnit='hours';setupWheel('incomeCurrency',C.currencies);setupWheel('itemCurrency',C.currencies);setupWheel('period',C.periods);setupWheel('unit',C.units,v=>magic('calculate',()=>{unit=v;renderCurrent()}));setupWheel('favoriteUnit',C.units,v=>{const c=find(state.calculations,openedFavorite);if(c){magic('calculate',()=>{c.displayUnit=v;if(!save())return;renderFavoriteDetail()})}});setupWheel('projectUnit',C.units,v=>{const p=find(state.projects,openedProject);if(p){magic('calculate',()=>{p.displayUnit=v;if(!save())return;renderProjectDetail()})}});
 setupExperience();
@@ -648,6 +889,7 @@ if(Calc.isValidProfile(state.profile||{})){
   ensureCurrentFx(false).then(renderAll);
 }
 renderProfileStage();renderAll();
+resumeTour();
 setupIntroLifecycle();
 runIntro('launch');
 window.MyRateReady=true;
