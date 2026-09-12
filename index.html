@@ -25,15 +25,15 @@
         <div class="section-heading"><div><div class="kicker">Сначала настроим ритм</div><h3>Мой рабочий ритм</h3></div></div>
         <div class="field-block">
           <div class="label-row"><label for="income">Какой суммой играем?</label><button class="help-button" type="button" data-help="income" aria-label="Подсказка: какой суммой играем">?</button></div>
-          <input id="income" class="number-input" inputmode="decimal" autocomplete="off" placeholder="Например, 150 000" data-number="decimal" data-min="0.01" data-max="1000000000000">
+          <input id="income" class="number-input" inputmode="decimal" autocomplete="off" placeholder="Например, 150 000" data-number="decimal" data-min="0.01" data-max="1000000000000" required aria-required="true">
         </div>
         <div class="two-columns">
           <div class="field-block"><div class="label-row wheel-field-label"><span>В какой валюте?</span><button class="help-button" type="button" data-help="incomeCurrency" aria-label="Подсказка: валюта">?</button></div><div class="wheel" data-wheel="incomeCurrency" aria-label="Валюта исходной суммы"></div></div>
           <div class="field-block"><div class="label-row wheel-field-label"><span>За какой период?</span><button class="help-button" type="button" data-help="period" aria-label="Подсказка: период">?</button></div><div class="wheel" data-wheel="period" aria-label="Период исходной суммы"></div></div>
         </div>
         <div class="two-columns">
-          <div class="field-block"><div class="label-row"><label for="days">Рабочих дней в неделю</label><button class="help-button" type="button" data-help="days" aria-label="Подсказка: рабочие дни">?</button></div><input id="days" class="number-input" inputmode="decimal" autocomplete="off" value="5" data-number="decimal" data-min="0.5" data-max="7"></div>
-          <div class="field-block"><div class="label-row"><label for="hours">Часов в рабочем дне</label><button class="help-button" type="button" data-help="hours" aria-label="Подсказка: рабочие часы">?</button></div><input id="hours" class="number-input" inputmode="decimal" autocomplete="off" value="8" data-number="decimal" data-min="0.25" data-max="24"></div>
+          <div class="field-block"><div class="label-row"><label for="days">Рабочих дней в неделю</label><button class="help-button" type="button" data-help="days" aria-label="Подсказка: рабочие дни">?</button></div><input id="days" class="number-input" inputmode="decimal" autocomplete="off" value="5" data-number="decimal" data-min="0.5" data-max="7" required aria-required="true"></div>
+          <div class="field-block"><div class="label-row"><label for="hours">Часов в рабочем дне</label><button class="help-button" type="button" data-help="hours" aria-label="Подсказка: рабочие часы">?</button></div><input id="hours" class="number-input" inputmode="decimal" autocomplete="off" value="8" data-number="decimal" data-min="0.25" data-max="24" required aria-required="true"></div>
         </div>
         <button id="saveProfile" class="button primary wide" type="button">Всё, считаем</button>
       </section>
@@ -41,11 +41,11 @@
       <section id="converter" class="hidden">
         <section class="surface compact-form">
           <div class="section-heading"><div><div class="kicker">Новая карточка</div><h3>Добавим хотелку</h3></div></div>
-          <div class="field-block"><div class="label-row"><label for="itemName">На что запал глаз?</label><button class="help-button" type="button" data-help="itemName" aria-label="Подсказка: название">?</button></div><input id="itemName" maxlength="80" autocomplete="off" placeholder="Например, iPhone duo"></div>
+          <div class="field-block"><div class="label-row"><label for="itemName">На что запал глаз?</label><button class="help-button" type="button" data-help="itemName" aria-label="Подсказка: название">?</button></div><input id="itemName" maxlength="80" autocomplete="off" placeholder="Например, iPhone duo" required aria-required="true"></div>
           <div class="price-grid">
-            <div class="field-block"><div class="label-row"><label for="itemPrice">Что на ценнике?</label><button class="help-button" type="button" data-help="itemPrice" aria-label="Подсказка: цена">?</button></div><input id="itemPrice" class="number-input" inputmode="decimal" autocomplete="off" placeholder="2 000" data-number="decimal" data-min="0.01" data-max="1000000000000000"></div>
+            <div class="field-block"><div class="label-row"><label for="itemPrice">Что на ценнике?</label><button class="help-button" type="button" data-help="itemPrice" aria-label="Подсказка: цена">?</button></div><input id="itemPrice" class="number-input" inputmode="decimal" autocomplete="off" placeholder="2 000" data-number="decimal" data-min="0.01" data-max="1000000000000000" required aria-required="true"></div>
             <div class="field-block"><div class="label-row wheel-field-label"><span>Валюта</span></div><div class="wheel" data-wheel="itemCurrency" aria-label="Валюта цены"></div></div>
-            <div class="field-block quantity-field"><div class="label-row"><label for="itemQty">Количество</label><button class="help-button" type="button" data-help="quantity" aria-label="Подсказка: количество">?</button></div><input id="itemQty" class="number-input" inputmode="decimal" autocomplete="off" value="1" data-number="decimal" data-min="0.01" data-max="1000000"></div>
+            <div class="field-block quantity-field"><div class="label-row"><label for="itemQty">Количество</label><button class="help-button" type="button" data-help="quantity" aria-label="Подсказка: количество">?</button></div><input id="itemQty" class="number-input" inputmode="decimal" autocomplete="off" placeholder="1" data-number="decimal" data-min="0.01" data-max="1000000" required aria-required="true"></div>
           </div>
           <button id="addItem" class="button primary wide" type="button">Добавить</button>
           <div id="fxStatus" class="status-line" aria-live="polite"></div>
