@@ -17,9 +17,14 @@
     document.querySelector('meta[name="theme-color"]').content = '#10100f';
   </script>
   <meta name="description" content="My Rate переводит стоимость вещей и планов в твоё рабочее время.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MyRate">
   <title>My Rate — сколько будет стоить для меня?</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111111'/%3E%3Cpath d='M16 43V21h7l9 12 9-12h7v22h-8V33l-8 10-8-10v10z' fill='white'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=3.1.1">
+  <link rel="icon" type="image/svg+xml" href="myrate-icon.svg?v=3.1.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3.1.2">
+  <link rel="manifest" href="manifest.webmanifest?v=3.1.2">
+  <link rel="stylesheet" href="styles.css?v=3.1.2">
 </head>
 <body>
   <div id="introScreen" class="intro-screen hidden" aria-live="polite" aria-label="My Rate. Сколько будет стоить для меня? A PROBA experience. No doubt. Just PROBA.">
@@ -176,6 +181,6 @@
   </div>
   <div id="dialogLayer" class="dialog-layer hidden" role="presentation"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><button id="dialogClose" class="dialog-close" type="button" aria-label="Закрыть">×</button><h3 id="dialogTitle"></h3><div id="dialogText" class="dialog-text"></div><div id="dialogBody"></div><div id="dialogActions" class="dialog-actions"></div></section></div>
   <div id="sheetLayer" class="sheet-layer hidden" role="presentation"><section class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><h3 id="sheetTitle"></h3><div id="sheetActions" class="sheet-actions"></div><button id="sheetCancel" class="sheet-cancel" type="button">Отмена</button></section></div>
-  <script src="config.js?v=3.1.1"></script><script src="storage.js?v=3.1.1"></script><script src="calculator.js?v=3.1.1"></script><script src="collections.js?v=3.1.1"></script><script src="interface.js?v=3.1.1"></script><script src="app.js?v=3.1.1"></script>
+  <script src="config.js?v=3.1.2"></script><script src="storage.js?v=3.1.2"></script><script src="calculator.js?v=3.1.2"></script><script src="collections.js?v=3.1.2"></script><script src="interface.js?v=3.1.2"></script><script src="app.js?v=3.1.2"></script>
 </body>
 </html>
