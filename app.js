@@ -146,7 +146,7 @@ function paintStory(){
  $('storyExample').replaceChildren(...s.rows.map(([label,value])=>{const row=document.createElement('div'),a=document.createElement('span'),b=document.createElement('strong');a.textContent=label;b.textContent=value;row.append(a,b);return row;}));
  $('storyPrevious').disabled=storyIndex===0;$('storyNext').textContent=storyIndex===stories.length-1?'Попробовать':'Дальше';
  $('storyHint').textContent=storyIndex===0?'Листай, когда разобрался':'Свайп влево — дальше · вправо — назад';
- layer.scrollTop=0;
+ $('storyBody').scrollTop=0;
 }
 function openStories(){
  if(storyRelease)return;
@@ -178,7 +178,7 @@ const meaningSlides=[
  {scene:'price',title:'У ценника есть привычка недоговаривать.',text:'Он показывает сумму. Но молчит о том, сколько твоего времени понадобилось, чтобы эта сумма появилась.'},
  {scene:'scales',title:'Одна цена — разная стоимость.',text:'Одна и та же сумма для одного человека — несколько рабочих дней. Для другого — месяц. Денежный ценник общий. Второй — личный.'},
  {scene:'light',title:'Мы не запрещаем. Мы включаем свет.',text:'Иногда вещь действительно стоит потраченного времени. Иногда — нет. MyRate не решает за тебя. Он делает невидимое видимым.'},
- {scene:'clock',title:'Сегодня — ценники. Дальше — время.',text:'Сейчас MyRate переводит цену вещей в рабочее время. Но сам вопрос шире: куда уходят наши дни, внимание и выборы? Мы начинаем с простого ценника.'},
+ {scene:'time',title:'Сегодня — ценники. Дальше — время.',text:'Сейчас MyRate переводит цену вещей в рабочее время. Но сам вопрос шире: куда уходят наши дни, внимание и выборы? Мы начинаем с простого ценника.'},
  {scene:'final',title:'У каждой вещи есть второй ценник.',text:'На нём написано твоё время.',final:'Не чтобы отговорить тебя. Чтобы решение действительно было твоим.'}
 ];
 let meaningIndex=0,meaningRelease=null,meaningScroll=0;
@@ -198,7 +198,7 @@ function paintMeaning(){
  $('meaningPrevious').disabled=meaningIndex===0;
  $('meaningHint').textContent=final?'Выбор остаётся за тобой':meaningIndex===0?'Листай, когда мысль уложилась':'Свайп влево — дальше · вправо — назад';
  visual.dataset.scene=s.scene;visual.classList.remove('is-entering');void visual.offsetWidth;visual.classList.add('is-entering');
- layer.scrollTop=0;
+ $('meaningBody').scrollTop=0;
 }
 function openMeaning(){
  if(meaningRelease||storyRelease)return;
@@ -874,17 +874,19 @@ if(S.warning)setTimeout(()=>toast(S.warning),6500);
 
 /* A single gentle hint after content changes; any user interaction cancels it. */
 function setupScrollHints(){
- let timer=0,lastScreen='',shown=false;
- const cancel=()=>{clearTimeout(timer);document.querySelector('.scroll-hint')?.classList.remove('scroll-hint');};
+ let timer=0,hideTimer=0,lastScreen='',shown=false;
+ const hint=$('pageScrollHint');
+ const hide=()=>{clearTimeout(hideTimer);hint.classList.add('hidden');};
+ const cancel=()=>{clearTimeout(timer);hide();};
  const schedule=()=>{
   cancel();const screen=document.querySelector('.screen.active');if(!screen)return;
   if(lastScreen!==screen.id){lastScreen=screen.id;shown=false;}
   if(shown)return;
   timer=setTimeout(()=>{
-   if(document.hidden||introActive||storyRelease||searchRelease||document.body.classList.contains('modal-open')||document.body.classList.contains('keyboard-open')||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+   if(document.hidden||introActive||storyRelease||meaningRelease||searchRelease||document.body.classList.contains('modal-open')||document.body.classList.contains('keyboard-open'))return;
    if(screen.getBoundingClientRect().bottom<=innerHeight+48)return;
-   shown=true;screen.classList.add('scroll-hint');
-   setTimeout(()=>screen.classList.remove('scroll-hint'),850);
+   shown=true;hint.classList.remove('hidden');
+   hideTimer=setTimeout(hide,2300);
   },2200);
  };
  ['touchstart','pointerdown','wheel','keydown'].forEach(name=>document.addEventListener(name,cancel,{passive:true}));
