@@ -93,7 +93,7 @@ body.intro-running.intro-handoff #mainTitle {
   filter: blur(5px) brightness(2.2);
   text-shadow: 0 0 18px rgba(255,255,255,.8);
 }
-.intro-screen.is-running .intro-word { animation: intro-word-flicker 1.45s steps(1,end) .92s forwards; }
+.intro-screen.is-running .intro-word { animation: intro-word-focus .72s cubic-bezier(.2,.76,.2,1) 2.35s forwards; }
 .intro-brand {
   position: absolute;
   right: 20px;
@@ -130,6 +130,11 @@ body.intro-running.intro-handoff #mainTitle {
   45%, 57% { opacity: 1; filter: blur(0) brightness(1.25); }
   59% { opacity: .4; filter: blur(2px) brightness(2); }
   64%, 100% { opacity: 1; filter: blur(0) brightness(1); text-shadow: 0 0 0 rgba(255,255,255,0); }
+}
+@keyframes intro-word-focus {
+  0% { opacity: 0; filter: blur(5px); transform: translateY(5px) scale(.98); }
+  70% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1.04); }
+  100% { opacity: 1; filter: none; transform: none; text-shadow: 0 0 0 rgba(53,104,240,0); }
 }
 .intro-screen.is-reduced .intro-word { animation: intro-word-soft .5s ease .42s forwards; }
 .intro-screen.is-reduced, .intro-screen.is-reduced .intro-title { transition-duration: .55s; }
@@ -1130,12 +1135,14 @@ body.search-open::before,body.stories-open::before,body.meaning-open::before { c
 .headline-question { display:block; }
 .headline-expression { font-size:.68em;line-height:1.02;letter-spacing:-.045em; }
 .headline-time { font-weight:950;letter-spacing:-.025em; }
+.headline-time,
+.headline-question .wide-word { color:var(--action); }
 .headline-question { margin-top:.28em;font-size:.66em;line-height:1.04;letter-spacing:-.035em; }
 .headline-question .wide-word { font-size:1.16em; }
 .intro-title .headline-expression { font-size:.72em; }
 .intro-title .headline-question { opacity:0; }
-.intro-screen.is-running .intro-title .headline-question { animation:intro-question-in .55s ease .72s forwards; }
-@keyframes intro-question-in { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none} }
+.intro-screen.is-running .intro-title .headline-question { animation:intro-question-in .78s cubic-bezier(.2,.76,.2,1) 1.55s forwards; }
+@keyframes intro-question-in { from{opacity:0;filter:blur(4px);transform:translateY(10px)}to{opacity:1;filter:blur(0);transform:none} }
 .intro-screen.is-leaving .intro-title .headline-question { opacity:1;animation:none; }
 
 .story-layer,
@@ -1176,15 +1183,23 @@ body.search-open::before,body.stories-open::before,body.meaning-open::before { c
 .story-top .icon-button,
 .meaning-top .icon-button { width:clamp(40px,6.2vh,48px);height:clamp(40px,6.2vh,48px);min-height:40px; }
 
-.story-body { display:grid;grid-template-rows:auto minmax(0,1fr);align-content:start;gap:clamp(8px,1.4vh,14px); }
+.story-body { display:grid;grid-template-rows:auto minmax(0,1fr);align-content:stretch;gap:clamp(8px,1.4vh,14px); }
 .story-copy h2 { margin:0 0 clamp(5px,1vh,10px);font-size:clamp(1.42rem,3.8vh,2.25rem);line-height:1.02; }
 .story-copy p { margin:0;font-size:clamp(.82rem,2vh,1rem);line-height:1.36; }
-.story-demo { min-height:0;padding:clamp(11px,1.8vh,18px);border-radius:clamp(20px,3.5vh,30px); }
+.story-demo { min-height:0;padding:clamp(11px,1.8vh,18px);border-radius:clamp(20px,3.5vh,30px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden; }
 .story-demo .kicker { font-size:clamp(.69rem,1.7vh,.78rem); }
+#storyExample { align-self:center;width:100%; }
 #storyExample > div { gap:2px;padding:clamp(5px,1.05vh,10px) 0; }
 #storyExample span { font-size:clamp(.69rem,1.65vh,.8rem); }
 #storyExample strong { font-size:clamp(.94rem,2.25vh,1.2rem);line-height:1.12; }
 #storyNote { margin:clamp(5px,1vh,9px) 0 0;font-size:clamp(.68rem,1.65vh,.8rem);line-height:1.28; }
+.story-wheel-example { display:grid;gap:clamp(9px,1.5vh,14px);align-content:center; }
+#storyExample.story-wheel-example > div { border-bottom:0;padding:0; }
+.story-result-preview { display:grid;gap:2px;text-align:center; }
+.story-result-preview span { color:var(--muted);font-size:clamp(.69rem,1.65vh,.8rem); }
+.story-result-preview strong { font-size:clamp(1.22rem,3vh,1.65rem);line-height:1.08; }
+.story-wheel-example .wheel-field-label { min-height:auto;margin-bottom:5px;justify-content:center; }
+.story-wheel { pointer-events:none; }
 #storyHint { margin:0;padding:0;font-size:clamp(.68rem,1.65vh,.8rem);line-height:1.2; }
 .story-actions { gap:9px; }
 .story-actions .button { min-height:clamp(46px,6.4vh,56px);padding:9px 14px; }
@@ -1193,7 +1208,7 @@ body.search-open::before,body.stories-open::before,body.meaning-open::before { c
 .meaning-visual {
   height:clamp(128px,25vh,220px);
   min-height:0;
-  overflow:visible;
+  overflow:hidden;
   border:0;
   border-radius:0;
   background:transparent;
@@ -1234,34 +1249,34 @@ body.search-open::before,body.stories-open::before,body.meaning-open::before { c
 .meaning-reveal { position:absolute;z-index:3;top:4%;bottom:4%;left:-36%;width:24%;opacity:0;transform:skewX(-13deg);background:linear-gradient(90deg,transparent,rgba(53,104,240,.16),transparent);pointer-events:none; }
 
 .meaning-visual[data-scene="price"] .meaning-tag-money { opacity:1;transform:translate(-50%,-50%) rotate(-1.5deg);filter:none; }
-.meaning-visual[data-scene="price"] .meaning-tag-time { opacity:.32;transform:translate(-48%,-35%) rotate(1.5deg); }
+.meaning-visual[data-scene="price"] .meaning-tag-time { opacity:0;transform:translate(-50%,-50%) rotate(-1.5deg); }
 .meaning-visual[data-scene="price"].is-entering .meaning-tag-money { animation:tag-money-in .7s cubic-bezier(.2,.78,.2,1) both; }
-.meaning-visual[data-scene="price"].is-entering .meaning-tag-time { animation:tag-edge-in 1.05s cubic-bezier(.2,.78,.2,1) both; }
 @keyframes tag-money-in { from{opacity:0;transform:translate(-54%,-50%) rotate(-4deg)}to{opacity:1;transform:translate(-50%,-50%) rotate(-1.5deg)} }
-@keyframes tag-edge-in { 0%,38%{opacity:0;transform:translate(-50%,-50%) rotate(-1.5deg)}100%{opacity:.32;transform:translate(-48%,-35%) rotate(1.5deg)} }
+.meaning-visual[data-scene="scales"] .meaning-tag-money { opacity:1;transform:translate(-50%,-50%) rotate(-1.5deg); }
+.meaning-visual[data-scene="scales"] .meaning-tag-time { opacity:1;transform:translate(-47%,-42%) rotate(1.5deg); }
+.meaning-visual[data-scene="scales"] .meaning-tag-time strong { opacity:0; }
+.meaning-visual[data-scene="scales"].is-entering .meaning-tag-time { animation:tag-edge-in .75s cubic-bezier(.2,.78,.2,1) both; }
+@keyframes tag-edge-in { from{opacity:0;transform:translate(-50%,-50%) rotate(-1.5deg)}to{opacity:1;transform:translate(-47%,-42%) rotate(1.5deg)} }
 
-.meaning-visual[data-scene="scales"] .meaning-tag-money,
-.meaning-visual[data-scene="light"] .meaning-tag-money,
-.meaning-visual[data-scene="time"] .meaning-tag-money,
-.meaning-visual[data-scene="final"] .meaning-tag-money { opacity:1;transform:translate(-50%,-78%) rotate(-1.5deg);filter:none; }
-.meaning-visual[data-scene="scales"] .meaning-tag-time,
-.meaning-visual[data-scene="light"] .meaning-tag-time,
-.meaning-visual[data-scene="time"] .meaning-tag-time,
-.meaning-visual[data-scene="final"] .meaning-tag-time { opacity:1;transform:translate(-50%,18%) rotate(1.5deg); }
-.meaning-visual[data-scene="scales"].is-entering .meaning-tag-money,
-.meaning-visual[data-scene="light"].is-entering .meaning-tag-money,
-.meaning-visual[data-scene="time"].is-entering .meaning-tag-money,
-.meaning-visual[data-scene="final"].is-entering .meaning-tag-money { animation:tag-money-lift .82s cubic-bezier(.2,.78,.2,1) both; }
-.meaning-visual[data-scene="scales"].is-entering .meaning-tag-time,
-.meaning-visual[data-scene="light"].is-entering .meaning-tag-time,
-.meaning-visual[data-scene="time"].is-entering .meaning-tag-time,
-.meaning-visual[data-scene="final"].is-entering .meaning-tag-time { animation:tag-time-reveal .9s cubic-bezier(.2,.78,.2,1) both; }
+.meaning-visual[data-scene="light"] .meaning-tag-money { opacity:1;transform:translate(-50%,-70%) rotate(-1.5deg); }
+.meaning-visual[data-scene="light"] .meaning-tag-time { opacity:1;transform:translate(-50%,-4%) rotate(1.5deg); }
+.meaning-visual[data-scene="light"] .meaning-tag-time strong { opacity:.15; }
+.meaning-visual[data-scene="light"].is-entering .meaning-tag-money { animation:tag-money-half .8s cubic-bezier(.2,.78,.2,1) both; }
+.meaning-visual[data-scene="light"].is-entering .meaning-tag-time { animation:tag-time-half .86s cubic-bezier(.2,.78,.2,1) both; }
 .meaning-visual[data-scene="light"].is-entering .meaning-reveal { animation:tag-light 1.2s ease .22s both; }
-.meaning-visual[data-scene="time"] .meaning-tag-time { transform:translate(-50%,18%) rotate(0) scale(1.035); }
-.meaning-visual[data-scene="final"] .meaning-tag-money { transform:translate(-50%,-76%) rotate(-.7deg); }
-.meaning-visual[data-scene="final"] .meaning-tag-time { transform:translate(-50%,16%) rotate(.7deg); }
-@keyframes tag-money-lift { from{opacity:1;transform:translate(-50%,-50%) rotate(-1.5deg)}to{opacity:1;transform:translate(-50%,-78%) rotate(-1.5deg)} }
-@keyframes tag-time-reveal { from{opacity:.22;transform:translate(-49%,-32%) rotate(1.5deg)}to{opacity:1;transform:translate(-50%,18%) rotate(1.5deg)} }
+@keyframes tag-money-half { from{transform:translate(-50%,-50%) rotate(-1.5deg)}to{transform:translate(-50%,-70%) rotate(-1.5deg)} }
+@keyframes tag-time-half { from{transform:translate(-47%,-42%) rotate(1.5deg)}to{transform:translate(-50%,-4%) rotate(1.5deg)} }
+
+.meaning-visual[data-scene="time"] .meaning-tag-money,
+.meaning-visual[data-scene="final"] .meaning-tag-money { opacity:1;transform:translate(-50%,-92%) rotate(-1deg); }
+.meaning-visual[data-scene="time"] .meaning-tag-time,
+.meaning-visual[data-scene="final"] .meaning-tag-time { opacity:1;transform:translate(-50%,12%) rotate(1deg); }
+.meaning-visual[data-scene="time"].is-entering .meaning-tag-money { animation:tag-money-open .82s cubic-bezier(.2,.78,.2,1) both; }
+.meaning-visual[data-scene="time"].is-entering .meaning-tag-time { animation:tag-time-open .9s cubic-bezier(.2,.78,.2,1) both; }
+.meaning-visual[data-scene="final"] .meaning-tag-money { transform:translate(-50%,-92%) rotate(-.5deg); }
+.meaning-visual[data-scene="final"] .meaning-tag-time { transform:translate(-50%,12%) rotate(.5deg); }
+@keyframes tag-money-open { from{transform:translate(-50%,-70%) rotate(-1.5deg)}to{transform:translate(-50%,-92%) rotate(-1deg)} }
+@keyframes tag-time-open { from{transform:translate(-50%,-4%) rotate(1.5deg)}to{transform:translate(-50%,12%) rotate(1deg)} }
 @keyframes tag-light { 0%{left:-36%;opacity:0}20%,72%{opacity:1}100%{left:112%;opacity:0} }
 
 .meaning-copy h2 { margin:0 0 clamp(5px,1vh,9px);font-size:clamp(1.36rem,3.5vh,2.25rem);line-height:1.02; }

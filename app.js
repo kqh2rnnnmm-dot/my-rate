@@ -143,10 +143,32 @@ function paintStory(){
  $('storyProgress').replaceChildren(...stories.map((_,i)=>{const el=document.createElement('span');el.className=i<=storyIndex?'seen':'';return el;}));
  $('storyCount').textContent=(storyIndex+1)+' / '+stories.length;
  $('storyTitle').textContent=s.title;$('storyText').textContent=s.text;$('storyNote').textContent=s.note;
- $('storyExample').replaceChildren(...s.rows.map(([label,value])=>{const row=document.createElement('div'),a=document.createElement('span'),b=document.createElement('strong');a.textContent=label;b.textContent=value;row.append(a,b);return row;}));
+ paintStoryExample(s);
  $('storyPrevious').disabled=storyIndex===0;$('storyNext').textContent=storyIndex===stories.length-1?'Попробовать':'Дальше';
  $('storyHint').textContent=storyIndex===0?'Листай, когда разобрался':'Свайп влево — дальше · вправо — назад';
  $('storyBody').scrollTop=0;
+}
+function paintStoryExample(s){
+ const example=$('storyExample');
+ if(storyIndex!==3){
+  example.className='';
+  example.replaceChildren(...s.rows.map(([label,value])=>{const row=document.createElement('div'),a=document.createElement('span'),b=document.createElement('strong');a.textContent=label;b.textContent=value;row.append(a,b);return row;}));
+  return;
+ }
+ example.className='story-wheel-example';
+ const result=document.createElement('div');result.className='story-result-preview';
+ const resultLabel=document.createElement('span');resultLabel.textContent='Наушники · 8 000 ₽';
+ const resultValue=document.createElement('strong');resultValue.textContent='10 часов работы';
+ result.append(resultLabel,resultValue);
+ const block=document.createElement('div');block.className='field-block result-wheel-block';
+ const label=document.createElement('div');label.className='label-row wheel-field-label centered';
+ const labelText=document.createElement('span');labelText.textContent='Показать стоимость в…';label.append(labelText);
+ const wheel=document.createElement('div');wheel.className='wheel unit-wheel story-wheel is-demonstrating';wheel.setAttribute('aria-label','Пример настоящего барабана единиц результата');
+ const center=document.createElement('div');center.className='wheel-center';
+ const options=document.createElement('div');options.className='wheel-options';
+ const values=['Рабочие годы','Минуты работы','Часы работы','Рабочие дни','Рабочие недели'];
+ values.forEach((value,index)=>{const option=document.createElement('div'),distance=index-2,y=(distance+1)*42,closeness=Math.max(0,1-Math.min(Math.abs(y-42)/42,1));option.className='wheel-option'+(distance===0?' is-focus':'');option.dataset.distance=String(distance);option.textContent=value;option.style.transform=`translateY(${y}px) scale(${.92+closeness*.16})`;option.style.opacity=String(.5+closeness*.5);option.setAttribute('aria-selected',distance===0?'true':'false');options.append(option)});
+ wheel.append(center,options);block.append(label,wheel);example.replaceChildren(result,block);
 }
 function openStories(){
  if(storyRelease)return;
