@@ -63,7 +63,7 @@ function closeHelp(){$('helpPopover').classList.add('hidden')}
 function dismissKeyboard(){document.activeElement?.blur?.();document.body.classList.remove('keyboard-open')}
 function runIntro(mode='launch') {
   if(introActive)return;
-  const intro=$('introScreen'),title=$('introTitle'),target=$('mainTitle');
+  const intro=$('introScreen'),title=$('introTitle');
   const theme=document.querySelector('meta[name="theme-color"]');
   const isReturn=mode==='return',reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const holdMs=isReturn?C.introReturnHoldMs:C.introHoldMs;
@@ -80,20 +80,11 @@ function runIntro(mode='launch') {
     theme.content='#f2f0ea';introActive=false;
     requestAnimationFrame(()=>{syncTour();maybeOpenMeaning();});
   };
-  const measureAndLeave=()=>{
-    if(!introActive)return;
-    const from=title.getBoundingClientRect(),to=target.getBoundingClientRect();
-    const scale=from.width?to.width/from.width:1;
-    title.style.transition='none';
-    title.style.left=from.left+'px';title.style.top=from.top+'px';title.style.width=from.width+'px';
-    title.classList.add('is-frozen');void title.offsetWidth;
-    title.style.removeProperty('transition');
-    intro.style.setProperty('--intro-x',(to.left-from.left)+'px');
-    intro.style.setProperty('--intro-y',(to.top-from.top)+'px');
-    intro.style.setProperty('--intro-scale',String(scale));
+  const revealDestination=()=>{
     document.documentElement.classList.remove('intro-pending');
     document.body.classList.add('intro-handoff');
     theme.content='#f2f0ea';
+    if(!meaningSeen())openMeaning();
     requestAnimationFrame(()=>requestAnimationFrame(()=>intro.classList.add('is-leaving')));
     finishTimer=setTimeout(finish,reduced?620:C.introExitMs+80);
   };
@@ -101,8 +92,7 @@ function runIntro(mode='launch') {
     if(leaving)return;
     leaving=true;clearTimeout(exitTimer);clearTimeout(brandTimer);
     intro.classList.add('is-branded');
-    // Two frames let Safari finish layout before the travelling title is measured.
-    requestAnimationFrame(()=>requestAnimationFrame(measureAndLeave));
+    requestAnimationFrame(()=>requestAnimationFrame(revealDestination));
   };
   const skip=()=>{if(performance.now()-started>=C.introSkipDelayMs)leave();};
   const key=e=>{if(['Escape','Enter',' '].includes(e.key))skip();};
@@ -896,23 +886,22 @@ if(S.warning)setTimeout(()=>toast(S.warning),6500);
 
 /* A single gentle hint after content changes; any user interaction cancels it. */
 function setupScrollHints(){
- let timer=0,hideTimer=0,lastScreen='',shown=false;
- const hint=$('pageScrollHint');
- const hide=()=>{clearTimeout(hideTimer);hint.classList.add('hidden');};
- const cancel=()=>{clearTimeout(timer);hide();};
+ let timer=0,finishTimer=0;
+ const shown=new Set();
+ const active=()=>document.querySelector('.screen.active');
+ const cancel=(remember=false)=>{clearTimeout(timer);clearTimeout(finishTimer);const screen=active();if(screen){screen.classList.remove('scroll-cue');if(remember)shown.add(screen.id);}};
  const schedule=()=>{
-  cancel();const screen=document.querySelector('.screen.active');if(!screen)return;
-  if(lastScreen!==screen.id){lastScreen=screen.id;shown=false;}
-  if(shown)return;
+  cancel();const screen=active();if(!screen||shown.has(screen.id))return;
   timer=setTimeout(()=>{
    if(document.hidden||introActive||storyRelease||meaningRelease||searchRelease||document.body.classList.contains('modal-open')||document.body.classList.contains('keyboard-open'))return;
-   if(screen.getBoundingClientRect().bottom<=innerHeight+48)return;
-   shown=true;hint.classList.remove('hidden');
-   hideTimer=setTimeout(hide,2300);
-  },2200);
+   const visibleBottom=(window.visualViewport?.offsetTop||0)+(window.visualViewport?.height||innerHeight);
+   if(screen.getBoundingClientRect().bottom<=visibleBottom+48)return;
+   shown.add(screen.id);screen.classList.remove('scroll-cue');void screen.offsetWidth;screen.classList.add('scroll-cue');
+   finishTimer=setTimeout(()=>screen.classList.remove('scroll-cue'),1350);
+  },1800);
  };
- ['touchstart','pointerdown','wheel','keydown'].forEach(name=>document.addEventListener(name,cancel,{passive:true}));
- addEventListener('scroll',()=>{shown=true;cancel();},{passive:true});
+ ['touchstart','pointerdown','wheel','keydown'].forEach(name=>document.addEventListener(name,()=>cancel(true),{passive:true}));
+ addEventListener('scroll',()=>cancel(true),{passive:true});
  const observer=new MutationObserver(schedule);
  document.querySelectorAll('.screen').forEach(el=>observer.observe(el,{childList:true,subtree:true,characterData:true}));
  const screens=new MutationObserver(records=>{if(records.some(r=>(r.oldValue||'').split(' ').includes('active')!==r.target.classList.contains('active')))schedule();});
