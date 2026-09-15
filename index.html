@@ -21,10 +21,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="MyRate">
   <title>My Rate — сколько будет стоить для меня?</title>
-  <link rel="icon" type="image/svg+xml" href="myrate-icon.svg?v=3.1.2">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3.1.2">
-  <link rel="manifest" href="manifest.webmanifest?v=3.1.2">
-  <link rel="stylesheet" href="styles.css?v=3.1.2">
+  <link rel="icon" type="image/svg+xml" href="myrate-icon.svg?v=3.1.3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3.1.3">
+  <link rel="manifest" href="manifest.webmanifest?v=3.1.3">
+  <link rel="stylesheet" href="styles.css?v=3.1.3">
 </head>
 <body>
   <div id="introScreen" class="intro-screen hidden" aria-live="polite" aria-label="My Rate. Сколько будет стоить для меня? A PROBA experience. No doubt. Just PROBA.">
@@ -132,7 +132,7 @@
     </section>
 
     <section id="screenFaq" class="screen" aria-labelledby="faqHeading">
-      <div class="detail-toolbar top-detail-toolbar"><button id="faqBack" class="back-button" type="button">← Назад</button></div><div class="kicker">Ответы без бюрократии</div><h2 id="faqHeading" class="screen-title">Что за магия?</h2><button id="faqStories" class="button secondary wide" type="button">Как это работает?</button><div id="faqContent" class="faq-list"></div>
+      <div class="detail-toolbar top-detail-toolbar"><button id="faqBack" class="back-button" type="button">← Назад</button></div><div class="kicker">Ответы без бюрократии</div><h2 id="faqHeading" class="screen-title">Что за магия?</h2><div class="faq-story-actions"><button id="faqMeaning" class="button primary wide" type="button">Зачем вообще MyRate?</button><button id="faqStories" class="button secondary wide" type="button">Как это работает?</button></div><div id="faqContent" class="faq-list"></div>
       <footer class="proba-footer"><div>A PROBA experience</div><strong>No doubt. Just <span>PROBA.</span></strong></footer>
     </section>
 
@@ -179,8 +179,30 @@
       <div class="story-actions"><button id="storyPrevious" class="button secondary" type="button">Назад</button><button id="storyNext" class="button primary" type="button">Дальше</button></div>
     </section>
   </div>
+  <div id="meaningLayer" class="meaning-layer hidden" role="dialog" aria-modal="true" aria-labelledby="meaningTitle">
+    <section class="meaning-panel">
+      <div id="meaningProgress" class="meaning-progress" aria-hidden="true"></div>
+      <div class="meaning-top"><span id="meaningCount"></span><span>Второй ценник</span><button id="meaningClose" class="icon-button" aria-label="Закрыть историю" type="button">×</button></div>
+      <div id="meaningVisual" class="meaning-visual" data-scene="price" aria-hidden="true">
+        <div class="meaning-orbit"></div>
+        <div class="meaning-tag">
+          <span class="meaning-tag-hole"></span>
+          <span class="meaning-tag-money">90 000 ₽</span>
+          <span class="meaning-tag-time">ТВОЁ ВРЕМЯ</span>
+        </div>
+        <div class="meaning-scales"><i></i><i></i><i></i></div>
+        <div class="meaning-light"></div>
+        <div class="meaning-clock"><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="meaning-copy" aria-live="polite"><h2 id="meaningTitle"></h2><p id="meaningText"></p><p id="meaningFinalText" class="meaning-final-text hidden"></p></div>
+      <div id="meaningBrand" class="meaning-brand hidden">A PROBA EXPERIENCE</div>
+      <p id="meaningHint" class="meaning-hint"></p>
+      <div id="meaningStandardActions" class="meaning-actions"><button id="meaningPrevious" class="button secondary" type="button">Назад</button><button id="meaningNext" class="button primary" type="button">Дальше</button></div>
+      <div id="meaningFinalActions" class="meaning-final-actions hidden"><button id="meaningLearn" class="button primary wide" type="button">Показать, как это работает</button><button id="meaningTry" class="button secondary wide" type="button">Попробовать самому</button><button id="meaningFinalBack" class="meaning-back" type="button">← Назад</button></div>
+    </section>
+  </div>
   <div id="dialogLayer" class="dialog-layer hidden" role="presentation"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><button id="dialogClose" class="dialog-close" type="button" aria-label="Закрыть">×</button><h3 id="dialogTitle"></h3><div id="dialogText" class="dialog-text"></div><div id="dialogBody"></div><div id="dialogActions" class="dialog-actions"></div></section></div>
   <div id="sheetLayer" class="sheet-layer hidden" role="presentation"><section class="action-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><h3 id="sheetTitle"></h3><div id="sheetActions" class="sheet-actions"></div><button id="sheetCancel" class="sheet-cancel" type="button">Отмена</button></section></div>
-  <script src="config.js?v=3.1.2"></script><script src="storage.js?v=3.1.2"></script><script src="calculator.js?v=3.1.2"></script><script src="collections.js?v=3.1.2"></script><script src="interface.js?v=3.1.2"></script><script src="app.js?v=3.1.2"></script>
+  <script src="config.js?v=3.1.3"></script><script src="storage.js?v=3.1.3"></script><script src="calculator.js?v=3.1.3"></script><script src="collections.js?v=3.1.3"></script><script src="interface.js?v=3.1.3"></script><script src="app.js?v=3.1.3"></script>
 </body>
 </html>

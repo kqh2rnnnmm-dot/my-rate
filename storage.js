@@ -94,6 +94,7 @@ window.MyRateStorage = (() => {
       projects: [],
       settings: { magic: true, jokes: true },
       onboarding: {
+        meaningVersionSeen: 0,
         wheelLearned: false,
         tourCompleted: false,
         tourActive: false,
@@ -115,6 +116,7 @@ window.MyRateStorage = (() => {
     state.projects = (Array.isArray(source?.projects) ? source.projects : []).map((item) => normalizeProject(item, state.profile, state.fx));
     state.settings.magic = source?.settings?.magic !== false;
     state.settings.jokes = source?.settings?.jokes !== false;
+    state.onboarding.meaningVersionSeen = Math.max(0, Number(source?.onboarding?.meaningVersionSeen) || 0);
     state.onboarding.wheelLearned = source?.onboarding?.wheelLearned === true;
     const hadLifeBeforeTour = Boolean(source?.profile) ||
       state.calculations.length > 0 || state.projects.length > 0;

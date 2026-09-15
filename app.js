@@ -78,7 +78,7 @@ function runIntro(mode='launch') {
     document.documentElement.classList.remove('intro-pending');
     document.body.classList.remove('intro-running','intro-handoff','intro-reduced');
     theme.content='#f2f0ea';introActive=false;
-    requestAnimationFrame(()=>syncTour());
+    requestAnimationFrame(()=>{syncTour();maybeOpenMeaning();});
   };
   const measureAndLeave=()=>{
     if(!introActive)return;
@@ -172,6 +172,67 @@ function setupStories(){
  layer.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5)stepStory(dx<0?1:-1);},{passive:true});
  layer.addEventListener('touchcancel',()=>{start=null;},{passive:true});
  layer.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();stepStory(e.key==='ArrowRight'?1:-1);}});
+}
+
+const meaningSlides=[
+ {scene:'price',title:'У ценника есть привычка недоговаривать.',text:'Он показывает сумму. Но молчит о том, сколько твоего времени понадобилось, чтобы эта сумма появилась.'},
+ {scene:'scales',title:'Одна цена — разная стоимость.',text:'Одна и та же сумма для одного человека — несколько рабочих дней. Для другого — месяц. Денежный ценник общий. Второй — личный.'},
+ {scene:'light',title:'Мы не запрещаем. Мы включаем свет.',text:'Иногда вещь действительно стоит потраченного времени. Иногда — нет. MyRate не решает за тебя. Он делает невидимое видимым.'},
+ {scene:'clock',title:'Сегодня — ценники. Дальше — время.',text:'Сейчас MyRate переводит цену вещей в рабочее время. Но сам вопрос шире: куда уходят наши дни, внимание и выборы? Мы начинаем с простого ценника.'},
+ {scene:'final',title:'У каждой вещи есть второй ценник.',text:'На нём написано твоё время.',final:'Не чтобы отговорить тебя. Чтобы решение действительно было твоим.'}
+];
+let meaningIndex=0,meaningRelease=null,meaningScroll=0;
+function meaningSeen(){return Number(state.onboarding?.meaningVersionSeen||0)>=C.meaningVersion;}
+function markMeaningSeen(){
+ if(meaningSeen())return true;
+ const next=clone(state);next.onboarding={...next.onboarding,meaningVersionSeen:C.meaningVersion};
+ return commit(next);
+}
+function paintMeaning(){
+ const s=meaningSlides[meaningIndex],final=meaningIndex===meaningSlides.length-1,visual=$('meaningVisual'),layer=$('meaningLayer');
+ $('meaningProgress').replaceChildren(...meaningSlides.map((_,i)=>{const el=document.createElement('span');el.className=i<=meaningIndex?'seen':'';return el;}));
+ $('meaningCount').textContent=(meaningIndex+1)+' / '+meaningSlides.length;
+ $('meaningTitle').textContent=s.title;$('meaningText').textContent=s.text;$('meaningFinalText').textContent=s.final||'';
+ $('meaningFinalText').classList.toggle('hidden',!final);$('meaningBrand').classList.toggle('hidden',!final);
+ $('meaningStandardActions').classList.toggle('hidden',final);$('meaningFinalActions').classList.toggle('hidden',!final);
+ $('meaningPrevious').disabled=meaningIndex===0;
+ $('meaningHint').textContent=final?'Выбор остаётся за тобой':meaningIndex===0?'Листай, когда мысль уложилась':'Свайп влево — дальше · вправо — назад';
+ visual.dataset.scene=s.scene;visual.classList.remove('is-entering');void visual.offsetWidth;visual.classList.add('is-entering');
+ layer.scrollTop=0;
+}
+function openMeaning(){
+ if(meaningRelease||storyRelease)return;
+ dismissKeyboard();closeHelp();meaningScroll=scrollY;meaningIndex=0;
+ $('meaningLayer').classList.remove('hidden');document.body.classList.add('meaning-open');
+ meaningRelease=U.focusLayer($('meaningLayer'),closeMeaning);paintMeaning();
+}
+function closeMeaning(){
+ if(!meaningRelease)return;
+ markMeaningSeen();$('meaningLayer').classList.add('hidden');document.body.classList.remove('meaning-open');
+ const release=meaningRelease;meaningRelease=null;release();scrollTo({top:meaningScroll,behavior:'instant'});
+}
+function stepMeaning(delta){
+ const next=meaningIndex+delta;if(next<0||next>=meaningSlides.length)return;
+ meaningIndex=next;paintMeaning();
+}
+function enterMyRate(){
+ closeMeaning();switchScreen('Current');
+ if(!Calc.isValidProfile(state.profile||{})){setupOpen=true;renderProfileStage();}
+ scrollTo({top:0,behavior:'instant'});
+}
+function learnMyRate(){
+ closeMeaning();openStories();
+}
+function maybeOpenMeaning(){if(!meaningSeen())openMeaning();}
+function setupMeaning(){
+ $('faqMeaning').onclick=openMeaning;$('meaningClose').onclick=closeMeaning;
+ $('meaningNext').onclick=()=>stepMeaning(1);$('meaningPrevious').onclick=()=>stepMeaning(-1);$('meaningFinalBack').onclick=()=>stepMeaning(-1);
+ $('meaningLearn').onclick=learnMyRate;$('meaningTry').onclick=enterMyRate;
+ const layer=$('meaningLayer');let start=null;
+ layer.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;},{passive:true});
+ layer.addEventListener('touchend',e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5)stepMeaning(dx<0?1:-1);},{passive:true});
+ layer.addEventListener('touchcancel',()=>{start=null;},{passive:true});
+ layer.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();stepMeaning(e.key==='ArrowRight'?1:-1);}});
 }
 function dialog({title,text='',body=null,actions=[{label:'Понятно',value:true,primary:true}]}) {
   closeSheet();
@@ -749,6 +810,7 @@ function setupExperience() {
   document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea,select'))e.preventDefault();});
   $('startSetup').onclick=()=>{setupOpen=true;renderProfileStage();scrollTo({top:0});};
   setupStories();
+  setupMeaning();
   $('quickProfile').onclick=()=>editProfileFrom('Current');
   $('profileBack').onclick=()=>{setupOpen=false;fillProfile(state.profile);renderProfileStage();switchScreen(profileReturn);};
   $('editProfile').onclick=()=>editProfileFrom('Settings');
